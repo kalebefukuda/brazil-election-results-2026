@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { NOMES, REGIAO_DE, REGIOES } from "@/lib/brasil";
 import { baixarCargo, situacaoGovernador, type ResultadoCargo } from "@/lib/cargos";
 import { pct } from "@/lib/format";
-import { useAuto } from "@/lib/useAuto";
-import Controles from "../Controles";
+import { useAtualizacao } from "@/lib/auto";
 import Situacao from "./Situacao";
 import MapaSelecao from "./MapaSelecao";
 import { IconeBusca } from "../Icones";
@@ -24,15 +23,12 @@ type PorUf = Record<string, { gov?: ResultadoCargo; sen?: ResultadoCargo }>;
 
 export default function VisaoEstados() {
   const [dados, setDados] = useState<PorUf>({});
-  const [atualizando, setAtualizando] = useState(false);
-  const [ultima, setUltima] = useState("");
   const [erro, setErro] = useState("");
   const [regiao, setRegiao] = useState("Todas");
   const [busca, setBusca] = useState("");
   const router = useRouter();
 
   const atualizar = useCallback(async () => {
-    setAtualizando(true);
     const pedidos = UFS_ESTADOS.flatMap((uf) => [
       baixarCargo(uf, "3").then((r) => ({ uf, tipo: "gov" as const, r })),
       baixarCargo(uf, "5").then((r) => ({ uf, tipo: "sen" as const, r })),
@@ -55,15 +51,9 @@ export default function VisaoEstados() {
           ? "Alguns estados não vieram nessa rodada; mostrando o último dado deles."
           : ""
     );
-    setUltima(new Date().toLocaleTimeString("pt-BR"));
-    setAtualizando(false);
   }, []);
 
-  useEffect(() => {
-    atualizar();
-  }, [atualizar]);
-
-  const auto = useAuto(atualizar, 60);
+  useAtualizacao(atualizar);
 
   // quantos estados cada partido lidera pra governador
   const placar: Record<string, number> = {};
@@ -95,21 +85,11 @@ export default function VisaoEstados() {
             Quem está na frente em cada estado. Toque num estado pra ver todos os candidatos e os deputados.
           </p>
         </div>
-        <Controles
-          atualizando={atualizando}
-          ultima={ultima}
-          rodando={auto.rodando}
-          falta={auto.falta}
-          intervalo={auto.intervalo}
-          onIntervalo={auto.setIntervalo}
-          onPausar={auto.pausar}
-          onAtualizar={auto.agora}
-        />
       </header>
 
       {erro && <p className="mb-4 rounded-xl border border-line px-4 py-3 text-[13px] text-ink2">{erro}</p>}
 
-      <div className="sticky top-[52px] z-20 -mx-4 mb-5 border-b border-line bg-[color-mix(in_srgb,var(--bg)_92%,transparent)] px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+      <div className="sticky top-[93px] z-20 lg:top-[57px] -mx-4 mb-5 border-b border-line bg-[color-mix(in_srgb,var(--bg)_92%,transparent)] px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
         <div className="flex flex-col gap-2.5 md:flex-row md:items-center">
           <div className="flex gap-1.5 overflow-x-auto" role="group" aria-label="Filtrar por região">
             {["Todas", ...Object.keys(REGIOES)].map((r) => (

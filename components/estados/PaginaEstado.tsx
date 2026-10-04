@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { NOMES, REGIAO_DE, REGIOES } from "@/lib/brasil";
 import { CARGOS, baixarCargo, cargosDaUf, situacaoGovernador, type CodCargo, type ResultadoCargo } from "@/lib/cargos";
 import { fmt, pct } from "@/lib/format";
-import { useAuto } from "@/lib/useAuto";
-import Controles from "../Controles";
+import { useAtualizacao } from "@/lib/auto";
 import Situacao from "./Situacao";
 import { IconeMapa, IconeVoltar } from "../Icones";
 
@@ -21,12 +20,9 @@ export default function PaginaEstado({ uf }: { uf: string }) {
   const cargo: CodCargo = pedido && cargos.includes(pedido) ? pedido : "3";
 
   const [res, setRes] = useState<Partial<Record<CodCargo, ResultadoCargo>>>({});
-  const [atualizando, setAtualizando] = useState(false);
-  const [ultima, setUltima] = useState("");
   const [erro, setErro] = useState("");
 
   const atualizar = useCallback(async () => {
-    setAtualizando(true);
     try {
       const r = await baixarCargo(uf, cargo);
       setRes((antigo) => ({ ...antigo, [cargo]: r }));
@@ -38,15 +34,9 @@ export default function PaginaEstado({ uf }: { uf: string }) {
           : "Não consegui falar com o TSE agora. Vou tentar de novo sozinho — ou toque em Atualizar."
       );
     }
-    setUltima(new Date().toLocaleTimeString("pt-BR"));
-    setAtualizando(false);
   }, [uf, cargo]);
 
-  useEffect(() => {
-    atualizar();
-  }, [atualizar]);
-
-  const auto = useAuto(atualizar, 60);
+  useAtualizacao(atualizar);
   const r = res[cargo];
 
   function trocarCargo(c: CodCargo) {
@@ -92,16 +82,6 @@ export default function PaginaEstado({ uf }: { uf: string }) {
             </p>
           )}
         </div>
-        <Controles
-          atualizando={atualizando}
-          ultima={ultima}
-          rodando={auto.rodando}
-          falta={auto.falta}
-          intervalo={auto.intervalo}
-          onIntervalo={auto.setIntervalo}
-          onPausar={auto.pausar}
-          onAtualizar={auto.agora}
-        />
       </header>
 
       <div className="mb-5 flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Cargo">

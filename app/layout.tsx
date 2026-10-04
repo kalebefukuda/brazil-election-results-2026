@@ -3,6 +3,7 @@ import "@fontsource-variable/inter";
 import { Analytics } from "@vercel/analytics/next";
 import Nav from "@/components/Nav";
 import Rodape from "@/components/Rodape";
+import { AutoProvider } from "@/lib/auto";
 import "./globals.css";
 
 const descricao =
@@ -41,9 +42,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: scriptTema }} />
       </head>
       <body>
-        <Nav />
-        {children}
-        <Rodape />
+        <AutoProvider>
+          <Nav />
+          {children}
+          <Rodape />
+        </AutoProvider>
         <Analytics />
       </body>
     </html>

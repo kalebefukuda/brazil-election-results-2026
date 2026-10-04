@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAtualizacao } from "@/lib/auto";
 import { UFS } from "@/lib/brasil";
 import { baixar, type Resumo } from "@/lib/tse";
 import type { Dados } from "@/lib/calc";
@@ -21,11 +22,6 @@ export default function Painel() {
   const [br, setBr] = useState<Resumo | null>(null);
   const [dados, setDados] = useState<Dados>({});
   const [erro, setErro] = useState("");
-  const [atualizando, setAtualizando] = useState(false);
-  const [ultima, setUltima] = useState("");
-  const [rodando, setRodando] = useState(true);
-  const [intervalo, setIntervalo] = useState(60);
-  const [falta, setFalta] = useState(60);
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [hist, setHist] = useState<Ponto[]>([]);
   const detalheRef = useRef<HTMLDivElement>(null);
@@ -39,7 +35,6 @@ export default function Painel() {
   }, []);
 
   const atualizar = useCallback(async () => {
-    setAtualizando(true);
     const todos = ["br", ...UFS];
     const res = await Promise.allSettled(todos.map((uf) => baixar(uf)));
     const novos: Dados = {};
@@ -75,43 +70,9 @@ export default function Painel() {
       });
     }
 
-    setUltima(new Date().toLocaleTimeString("pt-BR"));
-    setAtualizando(false);
   }, []);
 
-  useEffect(() => {
-    atualizar();
-  }, [atualizar]);
-
-  // contagem regressiva
-  useEffect(() => {
-    if (!rodando) return;
-    const t = setInterval(() => setFalta((f) => f - 1), 1000);
-    return () => clearInterval(t);
-  }, [rodando]);
-
-  useEffect(() => {
-    if (falta <= 0) {
-      atualizar();
-      setFalta(intervalo);
-    }
-  }, [falta, intervalo, atualizar]);
-
-  useEffect(() => {
-    setFalta(intervalo);
-  }, [intervalo]);
-
-  // voltou pra aba: atualiza na hora
-  useEffect(() => {
-    const fn = () => {
-      if (!document.hidden && rodando) {
-        atualizar();
-        setFalta(intervalo);
-      }
-    };
-    document.addEventListener("visibilitychange", fn);
-    return () => document.removeEventListener("visibilitychange", fn);
-  }, [rodando, intervalo, atualizar]);
+  useAtualizacao(atualizar);
 
   function selecionar(uf: string | null) {
     setSelecionado((atual) => (atual === uf ? null : uf));
@@ -123,20 +84,7 @@ export default function Painel() {
 
   return (
     <main className="mx-auto max-w-[1240px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8">
-      <Topo
-        br={br}
-        ultima={ultima}
-        atualizando={atualizando}
-        rodando={rodando}
-        falta={falta}
-        intervalo={intervalo}
-        onIntervalo={setIntervalo}
-        onPausar={() => setRodando((r) => !r)}
-        onAtualizar={() => {
-          atualizar();
-          setFalta(intervalo);
-        }}
-      />
+      <Topo br={br} />
 
       {erro && (
         <p role="status" className="mb-4 rounded-xl border border-line px-4 py-3 text-[13px] text-ink2">

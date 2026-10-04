@@ -171,3 +171,20 @@ body {
     transition: none !important;
   }
 }
+
+/* tudo que é clicável mostra a mãozinha (o preflight do Tailwind 4 tira de botão) */
+button,
+select,
+summary,
+a[href],
+label:has(select),
+[role="button"],
+[role="link"],
+[role="tab"] {
+  cursor: pointer;
+}
+button:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

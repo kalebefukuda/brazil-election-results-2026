@@ -28,7 +28,7 @@ export default function Nav() {
 
   return (
     <nav className="sticky top-0 z-30 border-b border-line bg-[color-mix(in_srgb,var(--bg)_88%,transparent)] backdrop-blur">
-      <div className="mx-auto flex max-w-[1240px] items-center gap-1 overflow-x-auto px-4 py-2 sm:px-6">
+      <div className="mx-auto flex h-[52px] max-w-[1240px] items-center gap-1 overflow-x-auto px-4 sm:px-6">
         {links.map((l) => (
           <Link
             key={l.href}

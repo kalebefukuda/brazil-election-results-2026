@@ -1,15 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { NOMES, REGIOES } from "@/lib/brasil";
+import { NOMES, REGIAO_DE, REGIOES } from "@/lib/brasil";
 import { baixarCargo, situacaoGovernador, type ResultadoCargo } from "@/lib/cargos";
 import { pct } from "@/lib/format";
 import { useAuto } from "@/lib/useAuto";
 import Controles from "../Controles";
 import Situacao from "./Situacao";
+import MapaSelecao from "./MapaSelecao";
+import { IconeBusca } from "../Icones";
 
 const UFS_ESTADOS = Object.values(REGIOES).flat();
+
+const semAcento = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
 type PorUf = Record<string, { gov?: ResultadoCargo; sen?: ResultadoCargo }>;
 
@@ -18,6 +27,9 @@ export default function VisaoEstados() {
   const [atualizando, setAtualizando] = useState(false);
   const [ultima, setUltima] = useState("");
   const [erro, setErro] = useState("");
+  const [regiao, setRegiao] = useState("Todas");
+  const [busca, setBusca] = useState("");
+  const router = useRouter();
 
   const atualizar = useCallback(async () => {
     setAtualizando(true);
@@ -63,6 +75,14 @@ export default function VisaoEstados() {
   const totalLiderando = placarLista.reduce((s, [, n]) => s + n, 0);
   const carregou = Object.keys(dados).length > 0;
 
+  // filtro por região + busca por nome/sigla
+  const termo = semAcento(busca.trim());
+  const visiveis = UFS_ESTADOS.filter(
+    (uf) =>
+      (regiao === "Todas" || REGIAO_DE[uf] === regiao) &&
+      (!termo || semAcento(NOMES[uf]).includes(termo) || uf === termo)
+  );
+
   return (
     <main className="mx-auto max-w-[1240px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8">
       <header className="mb-6 flex flex-col gap-4 sm:mb-8 md:flex-row md:items-end md:justify-between">
@@ -89,6 +109,39 @@ export default function VisaoEstados() {
 
       {erro && <p className="mb-4 rounded-xl border border-line px-4 py-3 text-[13px] text-ink2">{erro}</p>}
 
+      <div className="sticky top-[52px] z-20 -mx-4 mb-5 border-b border-line bg-[color-mix(in_srgb,var(--bg)_92%,transparent)] px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+        <div className="flex flex-col gap-2.5 md:flex-row md:items-center">
+          <div className="flex gap-1.5 overflow-x-auto" role="group" aria-label="Filtrar por região">
+            {["Todas", ...Object.keys(REGIOES)].map((r) => (
+              <button
+                key={r}
+                className="btn whitespace-nowrap"
+                aria-pressed={regiao === r}
+                onClick={() => setRegiao(r)}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+          <label className="relative md:ml-auto md:w-[280px]">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink3">
+              <IconeBusca />
+            </span>
+            <input
+              type="search"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && visiveis[0]) router.push(`/estados/${visiveis[0]}`);
+              }}
+              placeholder="Buscar estado (ex.: SC, Bahia)"
+              className="h-10 w-full rounded-xl border border-line bg-card pl-9 pr-3 text-[14px] text-ink placeholder:text-ink3"
+              aria-label="Buscar estado"
+            />
+          </label>
+        </div>
+      </div>
+
       {!carregou ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -102,6 +155,28 @@ export default function VisaoEstados() {
         </div>
       ) : (
         <div className="entra flex flex-col gap-8">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <section className="card p-5 sm:p-6" aria-labelledby="t-escolha">
+            <h2 id="t-escolha" className="titulo">
+              Escolha o estado
+            </h2>
+            <p className="mt-1 text-[13px] text-ink2">Toque no mapa ou na sigla pra abrir governador, senado e deputados.</p>
+            <div className="mt-4 grid grid-cols-1 items-center gap-5 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
+              <MapaSelecao regiao={regiao} />
+              <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-4 xl:grid-cols-5">
+                {UFS_ESTADOS.filter((uf) => regiao === "Todas" || REGIAO_DE[uf] === regiao).map((uf) => (
+                  <Link
+                    key={uf}
+                    href={`/estados/${uf}`}
+                    title={NOMES[uf]}
+                    className="flex h-10 items-center justify-center rounded-lg border border-line text-[13px] font-semibold transition-colors hover:border-ink3 hover:bg-card2"
+                  >
+                    {uf.toUpperCase()}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
           {placarLista.length > 0 && (
             <section className="card p-5 sm:p-6" aria-labelledby="t-placar">
               <h2 id="t-placar" className="titulo">
@@ -121,14 +196,27 @@ export default function VisaoEstados() {
               </ul>
             </section>
           )}
+          </div>
 
-          {Object.entries(REGIOES).map(([regiao, ufs]) => (
-            <section key={regiao} aria-labelledby={`t-${regiao}`}>
-              <h2 id={`t-${regiao}`} className="titulo mb-3">
-                {regiao}
+          {visiveis.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-line px-6 py-10 text-center">
+              <p className="font-semibold">Nenhum estado com “{busca}”</p>
+              <p className="mt-1 text-[13px] text-ink2">Tenta o nome ou a sigla, tipo “Paraná” ou “PR”.</p>
+              <button className="btn mt-4" onClick={() => setBusca("")}>
+                Limpar busca
+              </button>
+            </div>
+          )}
+
+          {Object.entries(REGIOES)
+            .filter(([, ufs]) => ufs.some((uf) => visiveis.includes(uf)))
+            .map(([nomeRegiao, ufs]) => (
+            <section key={nomeRegiao} aria-labelledby={`t-${nomeRegiao}`}>
+              <h2 id={`t-${nomeRegiao}`} className="titulo mb-3">
+                {nomeRegiao}
               </h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {ufs.map((uf) => (
+                {ufs.filter((uf) => visiveis.includes(uf)).map((uf) => (
                   <CardEstado key={uf} uf={uf} gov={dados[uf]?.gov} sen={dados[uf]?.sen} />
                 ))}
               </div>

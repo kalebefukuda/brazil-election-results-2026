@@ -9,6 +9,7 @@ import { fmt, pct } from "@/lib/format";
 import { useAuto } from "@/lib/useAuto";
 import Controles from "../Controles";
 import Situacao from "./Situacao";
+import { IconeMapa, IconeVoltar } from "../Icones";
 
 const UFS_ESTADOS = Object.values(REGIOES).flat().sort((a, b) => NOMES[a].localeCompare(NOMES[b], "pt-BR"));
 
@@ -54,8 +55,12 @@ export default function PaginaEstado({ uf }: { uf: string }) {
 
   return (
     <main className="mx-auto max-w-[1000px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8">
-      <Link href="/estados" className="text-[13px] text-ink2 hover:text-ink">
-        ← Todos os estados
+      <Link
+        href="/estados"
+        className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line pl-2.5 pr-3.5 text-[13px] font-medium text-ink2 transition-colors hover:border-ink3 hover:text-ink"
+      >
+        <IconeVoltar />
+        Todos os estados
       </Link>
 
       <header className="mb-6 mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -63,8 +68,12 @@ export default function PaginaEstado({ uf }: { uf: string }) {
           <p className="kicker mb-2">{REGIAO_DE[uf]} · Eleições 2026</p>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">{NOMES[uf]}</h1>
+            <label className="relative inline-flex items-center">
+              <span className="pointer-events-none absolute left-3 text-ink3">
+                <IconeMapa />
+              </span>
             <select
-              className="btn"
+              className="btn !pl-9"
               value={uf}
               onChange={(e) => router.push(`/estados/${e.target.value}?cargo=${cargo}`)}
               aria-label="Trocar de estado"
@@ -75,6 +84,7 @@ export default function PaginaEstado({ uf }: { uf: string }) {
                 </option>
               ))}
             </select>
+            </label>
           </div>
           {r && (
             <p className="num mt-2 text-[13px] text-ink2">

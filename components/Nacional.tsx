@@ -14,7 +14,17 @@ export default function Nacional({ br }: { br: Resumo }) {
         <h2 id="t-brasil" className="titulo">
           Brasil
         </h2>
-        <span className="kicker">seções apuradas</span>
+        {br.definido === "e" ? (
+          <span className="rounded-full bg-[color-mix(in_srgb,var(--ok)_18%,transparent)] px-2.5 py-1 text-[12px] font-semibold text-[var(--ok)]">
+            {br.cands[0].nome} eleito
+          </span>
+        ) : br.definido === "s" ? (
+          <span className="rounded-full bg-[color-mix(in_srgb,var(--c70)_18%,transparent)] px-2.5 py-1 text-[12px] font-semibold text-[var(--c70)]">
+            2º turno confirmado
+          </span>
+        ) : (
+          <span className="kicker">seções apuradas</span>
+        )}
       </div>
 
       <div className="mt-3 flex items-end justify-between gap-3">

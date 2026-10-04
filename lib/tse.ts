@@ -16,6 +16,7 @@ export type Resumo = {
   ts: number; // seções totais
   st: number; // seções totalizadas
   pst: number; // % apurado
+  definido: string; // "e" = eleito no 1º turno, "s" = 2º turno garantido, "n" = aberto
   te: number; // eleitorado
   comp: number; // comparecimento (nas seções apuradas)
   abst: number;
@@ -57,6 +58,7 @@ export function parse(uf: string, j: any): Resumo {
     ts,
     st,
     pst: ts ? (st / ts) * 100 : 0,
+    definido: j.md || "n",
     te: int(j.e.te),
     comp: int(j.e.c),
     abst: int(j.e.a),

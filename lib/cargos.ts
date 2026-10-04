@@ -40,6 +40,7 @@ export type ResultadoCargo = {
   data: string;
   pst: number;
   final: boolean;
+  definido: string; // md do TSE: "e" = eleito matematicamente, "s" = 2º turno garantido, "n" = ainda aberto
   vagas: number; // nv
   quociente: number; // qe (só proporcional)
   validos: number;
@@ -86,6 +87,21 @@ export function parseCargo(uf: string, cargo: CodCargo, j: any): ResultadoCargo 
   cands.sort((a, b) => b.votos - a.votos);
   grupos.sort((a, b) => b.votos - a.votos);
 
+  // o TSE avisa no campo "md" quando o resultado já não muda mais, antes de marcar o candidato
+  const vagas = int(c.nv) || 1;
+  if (cargo === "3" || cargo === "5") {
+    if (j.md === "e") {
+      cands.slice(0, vagas).forEach((k) => {
+        k.eleito = true;
+        if (!k.situacao) k.situacao = "Eleito";
+      });
+    } else if (j.md === "s" && cargo === "3") {
+      cands.slice(0, 2).forEach((k) => {
+        if (!k.situacao) k.situacao = "2º turno";
+      });
+    }
+  }
+
   const ts = int(j.s?.ts);
   const st = int(j.s?.st);
   return {
@@ -95,7 +111,8 @@ export function parseCargo(uf: string, cargo: CodCargo, j: any): ResultadoCargo 
     data: j.dt,
     pst: ts ? (st / ts) * 100 : 0,
     final: j.and === "f",
-    vagas: int(c.nv) || 1,
+    definido: j.md || "n",
+    vagas,
     quociente: int(c.qe),
     validos,
     cands,

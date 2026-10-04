@@ -18,11 +18,13 @@ export default function Projecao({ dados, br }: { dados: Dados; br: Resumo }) {
   else if (br.pst >= 30) confianca = "média";
 
   let veredito: string;
-  if (br.pst >= 99.9) veredito = "Apuração encerrada.";
+  if (br.definido === "e") veredito = `Definido: ${br.cands[0].nome} eleito no 1º turno.`;
+  else if (br.definido === "s") veredito = `Definido: vai ter 2º turno entre ${br.cands[0].nome} e ${br.cands[1].nome}.`;
+  else if (br.pst >= 99.9) veredito = "Apuração encerrada.";
   else if (primeiro.final > 50) veredito = `Nesse ritmo, ${primeiro.nome} venceria no 1º turno.`;
   else veredito = `Nesse ritmo, teria 2º turno entre ${primeiro.nome} e ${segundo.nome}.`;
 
-  const perto = Math.abs(primeiro.final - 50) < 1.5 && br.pst < 99.9;
+  const perto = Math.abs(primeiro.final - 50) < 1.5 && br.pst < 99.9 && br.definido === "n";
 
   return (
     <section className="card p-5 sm:p-6" aria-labelledby="t-proj">

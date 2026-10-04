@@ -62,6 +62,8 @@ export default function VisaoEstados() {
     if (g?.cands[0] && g.validos) placar[g.cands[0].partido] = (placar[g.cands[0].partido] || 0) + 1;
   }
   const placarLista = Object.entries(placar).sort((a, b) => b[1] - a[1]);
+  const govEleitos = UFS_ESTADOS.filter((uf) => dados[uf]?.gov?.definido === "e").length;
+  const govSegundo = UFS_ESTADOS.filter((uf) => dados[uf]?.gov?.definido === "s").length;
   const totalLiderando = placarLista.reduce((s, [, n]) => s + n, 0);
   const carregou = Object.keys(dados).length > 0;
 
@@ -163,6 +165,17 @@ export default function VisaoEstados() {
                 Partidos na frente para governador
               </h2>
               <p className="mt-1 text-[13px] text-ink2">Em quantos estados cada partido lidera agora.</p>
+              <div className="num mt-3 flex flex-wrap gap-2 text-[12.5px]">
+                <span className="rounded-full bg-[color-mix(in_srgb,var(--ok)_18%,transparent)] px-2.5 py-1 font-semibold text-[var(--ok)]">
+                  {govEleitos} já eleitos
+                </span>
+                <span className="rounded-full bg-[color-mix(in_srgb,var(--c70)_18%,transparent)] px-2.5 py-1 font-semibold text-[var(--c70)]">
+                  {govSegundo} com 2º turno garantido
+                </span>
+                <span className="rounded-full border border-line px-2.5 py-1 text-ink2">
+                  {27 - govEleitos - govSegundo} ainda em aberto
+                </span>
+              </div>
               <ul className="num mt-4 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
                 {placarLista.map(([partido, n]) => (
                   <li key={partido} className="grid grid-cols-[84px_minmax(0,1fr)_28px] items-center gap-3">

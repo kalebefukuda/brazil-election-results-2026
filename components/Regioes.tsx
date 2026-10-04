@@ -28,7 +28,7 @@ export default function Regioes({ dados, br, a, b }: Props) {
                 {pct(ag.pst, 1)} apurado · faltam {fmt(ag.ts - ag.st)} seções
               </p>
               <div className="mt-2 h-1 overflow-hidden rounded-full bg-empty">
-                <div className="barra h-full bg-ink" style={{ width: `${ag.pst}%` }} />
+                <div className="barra h-full bg-[var(--ok)]" style={{ width: `${ag.pst}%` }} />
               </div>
               <div className="mt-3 flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-empty">
                 {ag.validos > 0 && (

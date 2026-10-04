@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Resumo } from "@/lib/tse";
 import { NOMES, REGIAO_DE, cor } from "@/lib/brasil";
 import { curto, fmt, pct } from "@/lib/format";
@@ -7,16 +8,23 @@ export default function DetalheEstado({ d, br, onFechar }: { d: Resumo; br: Resu
 
   return (
     <section className="card entra p-5 sm:p-6" aria-labelledby="t-detalhe">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="kicker">{REGIAO_DE[d.uf]}</p>
           <h2 id="t-detalhe" className="mt-1 text-[22px] font-bold tracking-[-0.025em]">
             {NOMES[d.uf]}
           </h2>
         </div>
-        <button className="btn" onClick={onFechar}>
-          Fechar
-        </button>
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          {d.uf !== "zz" && (
+            <Link href={`/estados/${d.uf}`} className="btn inline-flex items-center font-semibold">
+              Governador, Senado e deputados →
+            </Link>
+          )}
+          <button className="btn" onClick={onFechar}>
+            Fechar
+          </button>
+        </div>
       </div>
 
       <p className="num mt-2 text-[13px] text-ink2">
@@ -24,7 +32,7 @@ export default function DetalheEstado({ d, br, onFechar }: { d: Resumo; br: Resu
         Brasil · TSE {d.hora}
       </p>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-empty">
-        <div className="barra h-full rounded-full bg-ink" style={{ width: `${d.pst}%` }} />
+        <div className="barra h-full rounded-full bg-[var(--ok)]" style={{ width: `${d.pst}%` }} />
       </div>
 
       <ul className="mt-4 grid gap-x-8 sm:grid-cols-2">

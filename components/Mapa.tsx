@@ -25,10 +25,21 @@ const AJUSTE: Record<string, [number, number]> = {
 };
 const PEQUENOS = ["df", "rn", "pb", "pe", "al", "se", "es", "rj"];
 
+// faixas de % apurado, do verde claro (começando) ao verde cheio (quase tudo apurado)
+const FAIXAS = [
+  { ate: 25, forca: 30, txt: "até 25%" },
+  { ate: 50, forca: 50, txt: "25–50%" },
+  { ate: 75, forca: 68, txt: "50–75%" },
+  { ate: 95, forca: 84, txt: "75–95%" },
+  { ate: 101, forca: 100, txt: "95%+" },
+];
+const verde = (forca: number) => `color-mix(in srgb, var(--ok) ${forca}%, var(--empty))`;
+
 export default function Mapa({ dados, br, a, b, selecionado, onSelecionar }: Props) {
   const [modo, setModo] = useState<Modo>("lider");
   const [centros, setCentros] = useState<Record<string, [number, number]>>({});
-  const [tip, setTip] = useState<{ uf: string; x: number; y: number } | null>(null);
+  const [tip, setTip] = useState<{ uf: string; x: number; y: number; w: number } | null>(null);
+  const cardRef = useRef<HTMLElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const ca = br.cands.find((c) => c.n === a)!;
@@ -52,7 +63,8 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar }: Pro
     const d = dados[uf];
     if (!d || !d.st) return "var(--empty)";
     if (modo === "apurado") {
-      return `color-mix(in srgb, var(--ink) ${Math.round(10 + d.pst * 0.85)}%, var(--empty))`;
+      const faixa = FAIXAS.find((f) => d.pst < f.ate) ?? FAIXAS[FAIXAS.length - 1];
+      return verde(faixa.forca);
     }
     if (modo === "a" || modo === "b") {
       const n = modo === "a" ? a : b;
@@ -78,7 +90,7 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar }: Pro
   const dTip = tip ? dados[tip.uf] : null;
 
   return (
-    <section className="card relative p-5 sm:p-6" aria-labelledby="t-mapa">
+    <section ref={cardRef} className="card relative p-5 sm:p-6" aria-labelledby="t-mapa">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="t-mapa" className="titulo">
           Mapa por estado
@@ -111,7 +123,11 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar }: Pro
             stroke={selecionado === uf ? "var(--ink)" : "var(--card)"}
             strokeWidth={selecionado === uf ? 2 : 1}
             className="cursor-pointer transition-[fill] duration-500 hover:brightness-110"
-            onMouseMove={(e) => setTip({ uf, x: e.clientX, y: e.clientY })}
+            onMouseMove={(e) => {
+              // posição relativa ao card, pra o tooltip ficar colado no mouse
+              const r = cardRef.current!.getBoundingClientRect();
+              setTip({ uf, x: e.clientX - r.left, y: e.clientY - r.top, w: r.width });
+            }}
             onClick={() => onSelecionar(uf)}
           >
             <title>{NOMES[uf]}</title>
@@ -121,7 +137,7 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar }: Pro
           <text
             key={uf}
             x={x}
-            y={y}
+            y={modo === "apurado" && !PEQUENOS.includes(uf) ? y - 5 : y}
             textAnchor="middle"
             dominantBaseline="middle"
             pointerEvents="none"
@@ -131,6 +147,11 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar }: Pro
             style={PEQUENOS.includes(uf) ? undefined : { paintOrder: "stroke", stroke: "rgba(0,0,0,.25)", strokeWidth: 2 }}
           >
             {uf.toUpperCase()}
+            {modo === "apurado" && !PEQUENOS.includes(uf) && dados[uf] && (
+              <tspan x={x} dy={11} fontSize={9} fontWeight={500}>
+                {Math.round(dados[uf].pst)}%
+              </tspan>
+            )}
           </text>
         ))}
       </svg>
@@ -154,7 +175,17 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar }: Pro
             <Escala n={modo === "a" ? a : b} />% dos válidos de {(modo === "a" ? ca : cb).nome} (20% → 75%+)
           </span>
         )}
-        {modo === "apurado" && <span>tom mais forte = mais seções já apuradas</span>}
+        {modo === "apurado" && (
+          <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>seções apuradas:</span>
+            {FAIXAS.map((f) => (
+              <span key={f.ate} className="inline-flex items-center gap-1.5">
+                <span className="sw" style={{ background: verde(f.forca) }} />
+                {f.txt}
+              </span>
+            ))}
+          </span>
+        )}
         <span className="inline-flex items-center gap-1.5">
           <span className="sw" style={{ background: "var(--empty)" }} /> sem apuração
         </span>
@@ -162,8 +193,8 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar }: Pro
 
       {tip && dTip && (
         <div
-          className="card pointer-events-none fixed z-20 hidden min-w-[210px] p-3 text-[12.5px] shadow-lg md:block"
-          style={{ left: Math.min(tip.x + 14, window.innerWidth - 240), top: tip.y + 14 }}
+          className="card pointer-events-none absolute z-20 hidden w-[220px] p-3 text-[12.5px] shadow-lg md:block"
+          style={{ left: tip.x + 236 > tip.w ? tip.x - 232 : tip.x + 12, top: tip.y + 12 }}
         >
           <div className="mb-1.5 font-semibold">
             {NOMES[tip.uf]} <span className="font-normal text-ink3">· {pct(dTip.pst, 1)} apurado</span>

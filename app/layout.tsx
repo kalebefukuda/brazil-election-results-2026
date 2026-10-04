@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/inter";
+import { Analytics } from "@vercel/analytics/next";
+import Nav from "@/components/Nav";
+import Rodape from "@/components/Rodape";
 import "./globals.css";
 
 const descricao =
@@ -37,7 +40,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: scriptTema }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <Nav />
+        {children}
+        <Rodape />
+        <Analytics />
+      </body>
     </html>
   );
 }

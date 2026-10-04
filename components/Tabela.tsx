@@ -146,7 +146,7 @@ export default function Tabela({ dados, br, a, b, selecionado, onSelecionar }: P
                 <Td bold>{pct(r.peso, 1)}</Td>
                 <Td>
                   <span className="mr-2 inline-block h-1 w-12 overflow-hidden rounded-full bg-empty align-middle">
-                    <span className="block h-full bg-ink2" style={{ width: `${r.pst}%` }} />
+                    <span className="block h-full bg-[var(--ok)]" style={{ width: `${r.pst}%` }} />
                   </span>
                   {pct(r.pst, 1)}
                 </Td>

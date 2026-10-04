@@ -28,7 +28,7 @@ export default function Nacional({ br }: { br: Resumo }) {
         </div>
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-empty">
-        <div className="barra h-full rounded-full bg-ink" style={{ width: `${br.pst}%` }} />
+        <div className="barra h-full rounded-full bg-[var(--ok)]" style={{ width: `${br.pst}%` }} />
       </div>
 
       <ul className="mt-5">

@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --bg: #0f1012;
+  --card: #17181b;
+  --card2: #1c1d21;
+  --line: #2a2c31;
+  --line2: #222428;
+  --ink: #ededeb;
+  --ink2: #a8aab0;
+  --ink3: #73767d;
+  --empty: #26282d;
+  --c22: #5b86ef;
+  --c13: #ec6060;
+  --c70: #dfa233;
+  --c55: #2fb39f;
+  --c14: #a57de6;
+  --cx: #7b7f87;
+  --ok: #45b878;
+}
+
+[data-theme="light"] {
+  --bg: #f6f6f4;
+  --card: #ffffff;
+  --card2: #fafaf8;
+  --line: #e4e4df;
+  --line2: #efefea;
+  --ink: #1b1c1f;
+  --ink2: #55585f;
+  --ink3: #8a8d94;
+  --empty: #e8e8e3;
+  --c22: #2a5bd7;
+  --c13: #d63a3a;
+  --c70: #c98a0b;
+  --c55: #13917f;
+  --c14: #8a55d6;
+  --cx: #9a9ea6;
+  --ok: #1f8a4c;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-card2: var(--card2);
+  --color-line: var(--line);
+  --color-line2: var(--line2);
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink2);
+  --color-ink3: var(--ink3);
+  --color-empty: var(--empty);
+  --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html {
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.kicker {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+
+.titulo {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.listra {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--empty) 0 4px,
+    color-mix(in srgb, var(--ink3) 35%, var(--empty)) 4px 7px
+  );
+}
+
+.sw {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.btn {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13px;
+  transition: border-color 0.15s ease-out, background 0.15s ease-out;
+}
+.btn:hover {
+  border-color: var(--ink3);
+}
+.btn[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--c22);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.skel {
+  background: linear-gradient(90deg, var(--empty) 0%, var(--line) 50%, var(--empty) 100%);
+  background-size: 200% 100%;
+  animation: skel 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes skel {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.pulso {
+  animation: pulso 2s infinite;
+}
+@keyframes pulso {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); }
+  70% { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.entra {
+  animation: entra 0.25s ease-out both;
+}
+@keyframes entra {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.barra {
+  transition: width 0.6s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

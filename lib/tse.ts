@@ -3,6 +3,7 @@ const TSE = "https://resultados.tse.jus.br/oficial/ele2026/6257/dados";
 
 export type Candidato = {
   n: string;
+  sq: string; // sequencial do TSE, usado na foto
   nome: string;
   partido: string;
   votos: number;
@@ -43,7 +44,7 @@ export function parse(uf: string, j: any): Resumo {
   for (const a of j.carg[0].agr)
     for (const p of a.par)
       for (const k of p.cand)
-        cands.push({ n: k.n, nome: titulo(k.nmu), partido: p.sg, votos: int(k.vap), pct: 0 });
+        cands.push({ n: k.n, sq: k.sqcand, nome: titulo(k.nmu), partido: p.sg, votos: int(k.vap), pct: 0 });
 
   const validos = int(j.v.vv);
   for (const c of cands) c.pct = validos ? (c.votos / validos) * 100 : 0;

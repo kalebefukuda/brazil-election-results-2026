@@ -81,3 +81,24 @@ export function IconePessoas({ className = "h-4 w-4" }: P) {
     </svg>
   );
 }
+
+export function IconeCompartilhar({ className = "h-4 w-4" }: P) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M12 3v12" />
+      <path d="m7 8 5-5 5 5" />
+      <path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
+    </svg>
+  );
+}
+
+export function IconeTelaCheia({ className = "h-4 w-4" }: P) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+      <path d="M16 3h3a2 2 0 0 1 2 2v3" />
+      <path d="M8 21H5a2 2 0 0 1-2-2v-3" />
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
+}

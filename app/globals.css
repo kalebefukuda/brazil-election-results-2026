@@ -188,3 +188,9 @@ select:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
+
+/* barra de rolagem fininha nas colunas do painel */
+.rolagem {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}

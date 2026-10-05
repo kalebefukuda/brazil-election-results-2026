@@ -28,7 +28,9 @@ export default function Nav() {
 
   const links = [
     { href: "/", txt: "Presidente", ativo: path === "/" },
-    { href: "/estados", txt: "Governadores e Congresso", ativo: path.startsWith("/estados") },
+    { href: "/estados", txt: "Governadores", ativo: path.startsWith("/estados") },
+    { href: "/senado", txt: "Senado", ativo: path === "/senado" },
+    { href: "/deputados", txt: "Deputados", ativo: path === "/deputados" },
   ];
 
   // no celular o texto fica mais curto pra caber tudo numa linha
@@ -58,7 +60,7 @@ export default function Nav() {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                className={`whitespace-nowrap rounded-lg px-2 py-2 text-[12.5px] font-medium transition-colors sm:px-3 sm:text-[13px] ${
                   l.ativo ? "bg-card text-ink" : "text-ink2 hover:text-ink"
                 }`}
                 aria-current={l.ativo ? "page" : undefined}
@@ -67,7 +69,6 @@ export default function Nav() {
               </Link>
             ))}
           </nav>
-          <div className="ml-auto lg:hidden">{botaoTema}</div>
         </div>
 
         {/* linha 2 (no celular) / direita (no desktop): ao vivo + controles */}
@@ -122,7 +123,7 @@ export default function Nav() {
             <IconeAtualizar className={`h-4 w-4 ${auto.atualizando ? "animate-spin" : ""}`} />
             <span className="hidden sm:inline">Atualizar</span>
           </button>
-          <div className="hidden lg:block">{botaoTema}</div>
+          {botaoTema}
         </div>
       </div>
     </header>

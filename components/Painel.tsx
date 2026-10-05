@@ -6,7 +6,8 @@ import { UFS } from "@/lib/brasil";
 import { baixar, type Resumo } from "@/lib/tse";
 import type { Dados } from "@/lib/calc";
 import Topo from "./Topo";
-import Nacional from "./Nacional";
+import Manchete from "./Manchete";
+import RegioesCompacto from "./RegioesCompacto";
 import Projecao from "./Projecao";
 import Mapa from "./Mapa";
 import DetalheEstado from "./DetalheEstado";
@@ -83,8 +84,10 @@ export default function Painel() {
   const b = br?.cands[1]?.n ?? "";
 
   return (
-    <main className="mx-auto max-w-[1240px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8">
-      <Topo br={br} />
+    <main className="mx-auto max-w-[1240px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8 xl:max-w-[1680px] xl:pt-4">
+      <div className="xl:hidden">
+        <Topo br={br} />
+      </div>
 
       {erro && (
         <p role="status" className="mb-4 rounded-xl border border-line px-4 py-3 text-[13px] text-ink2">
@@ -96,29 +99,42 @@ export default function Painel() {
         <Carregando />
       ) : (
         <div className="entra flex flex-col gap-4 sm:gap-5">
-          <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-            <Nacional br={br} />
-            <Mapa dados={dados} br={br} a={a} b={b} selecionado={selecionado} onSelecionar={selecionar} />
+          {/* painel: no desktop grande vira 3 colunas numa tela só, cada coluna rola sozinha */}
+          <div className="grid grid-cols-1 gap-4 sm:gap-5 xl:h-[calc(100vh-57px-32px)] xl:grid-cols-[360px_minmax(0,1fr)_360px] xl:gap-4">
+            <div className="flex min-h-0 flex-col gap-4 sm:gap-5 xl:gap-4 xl:overflow-y-auto xl:pr-1 rolagem">
+              <Manchete br={br} />
+              <div className="hidden xl:block">
+                <Evolucao hist={hist} br={br} />
+              </div>
+            </div>
+
+            <div className="flex min-h-0 flex-col gap-4 xl:overflow-y-auto rolagem">
+              <div className="xl:min-h-0 xl:flex-1">
+                <Mapa dados={dados} br={br} a={a} b={b} selecionado={selecionado} onSelecionar={selecionar} />
+              </div>
+              <div ref={detalheRef}>
+                {selecionado && dados[selecionado] && (
+                  <DetalheEstado d={dados[selecionado]} br={br} onFechar={() => setSelecionado(null)} />
+                )}
+              </div>
+            </div>
+
+            <div className="flex min-h-0 flex-col gap-4 sm:gap-5 xl:gap-4 xl:overflow-y-auto xl:pl-1 rolagem">
+              <RegioesCompacto dados={dados} br={br} a={a} b={b} />
+              <Projecao dados={dados} br={br} />
+              <div className="xl:hidden">
+                <Evolucao hist={hist} br={br} />
+              </div>
+            </div>
           </div>
 
-          <div ref={detalheRef}>
-            {selecionado && dados[selecionado] && (
-              <DetalheEstado d={dados[selecionado]} br={br} onFechar={() => setSelecionado(null)} />
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2">
-            <Projecao dados={dados} br={br} />
-            <Evolucao hist={hist} br={br} />
-          </div>
-
+          <h2 className="kicker mt-6">Mais detalhes</h2>
           <PesoRegioes dados={dados} br={br} a={a} b={b} />
           <Saldo dados={dados} br={br} a={a} b={b} onSelecionar={selecionar} />
           <Regioes dados={dados} br={br} a={a} b={b} />
           <Tabela dados={dados} br={br} a={a} b={b} selecionado={selecionado} onSelecionar={selecionar} />
         </div>
       )}
-
     </main>
   );
 }

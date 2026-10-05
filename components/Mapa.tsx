@@ -90,7 +90,7 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar }: Pro
   const dTip = tip ? dados[tip.uf] : null;
 
   return (
-    <section ref={cardRef} className="card relative p-5 sm:p-6" aria-labelledby="t-mapa">
+    <section ref={cardRef} className="card relative p-5 sm:p-6 xl:flex xl:h-full xl:flex-col" aria-labelledby="t-mapa">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="t-mapa" className="titulo">
           Mapa por estado
@@ -109,7 +109,7 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar }: Pro
       <svg
         ref={svgRef}
         viewBox={VIEWBOX}
-        className="mx-auto mt-3 block h-auto w-full max-w-[560px]"
+        className="mx-auto mt-3 block h-auto w-full max-w-[560px] xl:min-h-0 xl:max-w-none xl:flex-1"
         role="img"
         aria-label="Mapa do Brasil por estado"
         onMouseLeave={() => setTip(null)}

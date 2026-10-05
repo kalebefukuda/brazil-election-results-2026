@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { NOMES, REGIAO_DE, REGIOES } from "@/lib/brasil";
-import { baixarCargo, situacaoGovernador, type ResultadoCargo } from "@/lib/cargos";
+import { baixarCargo, situacaoGovernador, somaApuracao, type ResultadoCargo } from "@/lib/cargos";
 import { pct } from "@/lib/format";
 import { useAtualizacao } from "@/lib/auto";
 import Situacao from "./Situacao";
 import MapaSelecao from "./MapaSelecao";
 import { IconeBusca } from "../Icones";
+import Apurado from "../Apurado";
 
 const UFS_ESTADOS = Object.values(REGIOES).flat();
 
@@ -66,6 +67,7 @@ export default function VisaoEstados() {
   const govSegundo = UFS_ESTADOS.filter((uf) => dados[uf]?.gov?.definido === "s").length;
   const totalLiderando = placarLista.reduce((s, [, n]) => s + n, 0);
   const carregou = Object.keys(dados).length > 0;
+  const apur = somaApuracao(UFS_ESTADOS.map((uf) => dados[uf]?.gov));
 
   // filtro por região + busca por nome/sigla
   const termo = semAcento(busca.trim());
@@ -87,6 +89,7 @@ export default function VisaoEstados() {
             Quem está na frente em cada estado. Toque num estado pra ver todos os candidatos e os deputados.
           </p>
         </div>
+        {carregou && <Apurado {...apur} className="card w-full p-4 md:w-[360px] md:flex-none" />}
       </header>
 
       {erro && <p className="mb-4 rounded-xl border border-line px-4 py-3 text-[13px] text-ink2">{erro}</p>}

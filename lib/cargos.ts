@@ -39,6 +39,9 @@ export type ResultadoCargo = {
   hora: string;
   data: string;
   pst: number;
+  st: number; // seções totalizadas
+  ts: number; // total de seções
+  esnt: number; // eleitores em seções ainda não totalizadas
   final: boolean;
   definido: string; // md do TSE: "e" = eleito matematicamente, "s" = 2º turno garantido, "n" = ainda aberto
   vagas: number; // nv
@@ -110,6 +113,9 @@ export function parseCargo(uf: string, cargo: CodCargo, j: any): ResultadoCargo 
     hora: j.ht,
     data: j.dt,
     pst: ts ? (st / ts) * 100 : 0,
+    st,
+    ts,
+    esnt: int(j.e?.esnt),
     final: j.and === "f",
     definido: j.md || "n",
     vagas,
@@ -151,4 +157,18 @@ export function situacaoGovernador(r: ResultadoCargo) {
   if (a.situacao) return a.situacao;
   if (r.final) return a.pct > 50 ? "Eleito" : "2º turno";
   return a.pct > 50 ? "tendência de vitória no 1º turno" : "tendência de 2º turno";
+}
+
+// soma a apuração de vários estados (pra mostrar o total do país nas páginas de Senado/Deputados)
+export function somaApuracao(lista: (ResultadoCargo | undefined)[]) {
+  let st = 0;
+  let ts = 0;
+  let esnt = 0;
+  for (const r of lista) {
+    if (!r) continue;
+    st += r.st;
+    ts += r.ts;
+    esnt += r.esnt;
+  }
+  return { st, ts, esnt, pst: ts ? (st / ts) * 100 : 0 };
 }

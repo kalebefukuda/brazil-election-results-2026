@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import type { Resumo } from "@/lib/tse";
 import { cor } from "@/lib/brasil";
 import { curto, fmt, pct } from "@/lib/format";
 import Foto from "./Foto";
+import Apurado from "./Apurado";
 import { IconeCompartilhar, IconeTelaCheia } from "./Icones";
 
 // placar principal do Presidente: manchete + duelo dos dois primeiros
@@ -15,6 +17,7 @@ export default function Manchete({ br }: { br: Resumo }) {
   const comparec = br.comp + br.abst ? (br.comp / (br.comp + br.abst)) * 100 : 0;
   const brancosNulos = br.total ? ((br.brancos + br.nulos) / br.total) * 100 : 0;
   const primeiroNome = (nome: string) => nome.split(" ")[0];
+  const [copiado, setCopiado] = useState(false);
 
   let titulo = (
     <>
@@ -35,11 +38,18 @@ export default function Manchete({ br }: { br: Resumo }) {
       </>
     );
 
+  // no celular abre o menu de compartilhar do sistema; no computador copia o resumo + link
   async function compartilhar() {
-    const dados = { title: "Apuração Presidente 2026", text: `${a.nome} ${pct(a.pct, 1)} × ${b.nome} ${pct(b.pct, 1)} · ${pct(br.pst, 1)} apurado`, url: location.href };
+    const texto = `Apuração Presidente 2026 (${pct(br.pst, 1)} das seções): ${a.nome} ${pct(a.pct, 1)} × ${b.nome} ${pct(b.pct, 1)}`;
+    const celular = window.matchMedia("(pointer: coarse)").matches;
     try {
-      if (navigator.share) await navigator.share(dados);
-      else await navigator.clipboard.writeText(location.href);
+      if (celular && navigator.share) {
+        await navigator.share({ title: "Apuração Presidente 2026", text: texto, url: location.href });
+        return;
+      }
+      await navigator.clipboard.writeText(`${texto}\n${location.href}`);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
     } catch {}
   }
 
@@ -51,10 +61,19 @@ export default function Manchete({ br }: { br: Resumo }) {
   return (
     <section className="card p-5" aria-labelledby="t-manchete">
       <div className="flex items-center justify-between gap-2">
-        <p className="num text-[12px] text-ink2">Presidente · Brasil · {pct(br.pst, 1)} das seções</p>
+        <p className="kicker">Presidente · Brasil</p>
         <div className="flex gap-1">
-          <button className="btn !min-h-[30px] !px-2" onClick={compartilhar} title="Compartilhar" aria-label="Compartilhar">
-            <IconeCompartilhar />
+          <button
+            className={`btn inline-flex !min-h-[30px] items-center gap-1.5 !px-2.5 !text-[12px] ${copiado ? "!border-[var(--ok)] !text-[var(--ok)]" : ""}`}
+            onClick={compartilhar}
+            title="Copia o resultado e o link do site pra mandar pra alguém"
+            aria-live="polite"
+          >
+            {copiado ? "✓ Link copiado" : (
+              <>
+                <IconeCompartilhar className="h-3.5 w-3.5" /> Compartilhar
+              </>
+            )}
           </button>
           <button className="btn hidden !min-h-[30px] !px-2 sm:inline-flex sm:items-center" onClick={telaCheia} title="Tela cheia" aria-label="Tela cheia">
             <IconeTelaCheia />
@@ -62,7 +81,9 @@ export default function Manchete({ br }: { br: Resumo }) {
         </div>
       </div>
 
-      <h1 id="t-manchete" className="mt-2 text-[26px] font-extrabold leading-[1.1] tracking-[-0.03em] sm:text-[28px]">
+      <Apurado pst={br.pst} st={br.st} ts={br.ts} esnt={br.esnt} className="mt-3 rounded-xl border border-line2 bg-card2 p-3 sm:p-3.5" />
+
+      <h1 id="t-manchete" className="mt-4 text-[26px] font-extrabold leading-[1.1] tracking-[-0.03em] sm:text-[28px]">
         {titulo}
       </h1>
 

@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { NOMES, REGIOES } from "@/lib/brasil";
-import { baixarCargo, type ResultadoCargo } from "@/lib/cargos";
+import { baixarCargo, somaApuracao, type ResultadoCargo } from "@/lib/cargos";
 import { campo, corPartido, type Campo } from "@/lib/partidos";
 import { fmt, pct } from "@/lib/format";
 import { useAtualizacao } from "@/lib/auto";
 import Hemiciclo, { type Cadeira } from "../Hemiciclo";
 import BarraCampos from "../BarraCampos";
+import Apurado from "../Apurado";
 
 const UFS_ESTADOS = Object.values(REGIOES).flat();
 
@@ -67,18 +68,22 @@ export default function PaginaDeputados() {
   cadeiras.splice(posMeio, 0, ...Array.from({ length: vazias }, () => ({ cor: "var(--line)", forte: true, titulo: "ainda não distribuída" })));
 
   const carregou = Object.keys(dados).length > 0;
+  const apur = somaApuracao(UFS_ESTADOS.map((uf) => dados[uf]));
 
   return (
     <main className="mx-auto max-w-[1240px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8">
-      <header className="mb-6">
-        <p className="kicker mb-2">Eleições 2026 · 1º turno</p>
-        <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">
-          Câmara dos Deputados
-        </h1>
-        <p className="mt-2 max-w-[62ch] text-[13px] text-ink2">
-          {totalVagas} cadeiras. Cada partido ou federação leva cadeiras pelos votos que somou em cada estado; o TSE vai
-          distribuindo conforme a apuração avança.
-        </p>
+      <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="kicker mb-2">Eleições 2026 · 1º turno</p>
+          <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">
+            Câmara dos Deputados
+          </h1>
+          <p className="mt-2 max-w-[62ch] text-[13px] text-ink2">
+            {totalVagas} cadeiras. Cada partido ou federação leva cadeiras pelos votos que somou em cada estado; o TSE
+            vai distribuindo conforme a apuração avança.
+          </p>
+        </div>
+        {carregou && <Apurado {...apur} className="card w-full p-4 md:w-[360px] md:flex-none" />}
       </header>
 
       {erro && <p className="mb-4 rounded-xl border border-line px-4 py-3 text-[13px] text-ink2">{erro}</p>}

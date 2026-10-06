@@ -33,3 +33,17 @@ export function cor(n?: string | null) {
   if (!n) return "var(--cx)";
   return CORES[n] ?? "var(--cx)";
 }
+
+// código IBGE da UF (2 primeiros dígitos do código do município) → sigla
+const UF_IBGE: Record<string, string> = {
+  "11": "ro", "12": "ac", "13": "am", "14": "rr", "15": "pa", "16": "ap", "17": "to",
+  "21": "ma", "22": "pi", "23": "ce", "24": "rn", "25": "pb", "26": "pe", "27": "al", "28": "se", "29": "ba",
+  "31": "mg", "32": "es", "33": "rj", "35": "sp", "41": "pr", "42": "sc", "43": "rs",
+  "50": "ms", "51": "mt", "52": "go", "53": "df",
+};
+
+export function ufDoMunicipio(cdi: string) {
+  return UF_IBGE[cdi.slice(0, 2)];
+}
+
+export const UFS_ESTADOS = Object.values(REGIOES).flat();

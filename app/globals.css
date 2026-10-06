@@ -136,12 +136,6 @@ body {
   border-radius: 6px;
 }
 
-/* select invisível por cima de um botão: o foco aparece no botão */
-label:has(> select:focus-visible) {
-  outline: 2px solid var(--c22);
-  outline-offset: 2px;
-}
-
 .skel {
   background: linear-gradient(90deg, var(--empty) 0%, var(--line) 50%, var(--empty) 100%);
   background-size: 200% 100%;
@@ -204,7 +198,6 @@ button,
 select,
 summary,
 a[href],
-label:has(select),
 [role="button"],
 [role="link"],
 [role="tab"] {
@@ -245,4 +238,12 @@ select:disabled {
   border-radius: 999px;
   background: var(--ink);
   border: 3px solid var(--card);
+}
+
+.modal::backdrop {
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(2px);
+}
+.modal[open] {
+  animation: entra 0.18s ease-out;
 }

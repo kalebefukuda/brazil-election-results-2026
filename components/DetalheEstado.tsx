@@ -7,7 +7,7 @@ export default function DetalheEstado({ d, br, onFechar }: { d: Resumo; br: Resu
   const peso = br.te ? (d.te / br.te) * 100 : 0;
 
   return (
-    <section className="card entra p-5 sm:p-6" aria-labelledby="t-detalhe">
+    <section aria-labelledby="t-detalhe">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="kicker">{REGIAO_DE[d.uf]}</p>

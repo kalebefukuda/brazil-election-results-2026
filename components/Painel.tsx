@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAtualizacao } from "@/lib/auto";
-import { UFS } from "@/lib/brasil";
+import { NOMES, UFS } from "@/lib/brasil";
 import { baixar, type Resumo } from "@/lib/tse";
 import { ANO_ATUAL, codigos, ehPassada } from "@/lib/eleicao";
 import { chaveEleicao, descobrirTurno, useTurno } from "@/lib/turno";
@@ -14,6 +14,7 @@ import RegioesCompacto from "./RegioesCompacto";
 import Projecao from "./Projecao";
 import Mapa from "./mapa/Mapa";
 import DetalheEstado from "./DetalheEstado";
+import Modal from "./ui/Modal";
 import PesoRegioes from "./PesoRegioes";
 import Saldo from "./Saldo";
 import Regioes from "./Regioes";
@@ -30,7 +31,6 @@ export default function Painel() {
   const [hist, setHist] = useState<Ponto[]>([]);
   const [historico, setHistorico] = useState<Historico | null>(null);
   const [indice, setIndice] = useState<number | null>(null); // foto da linha do tempo; null = ao vivo
-  const detalheRef = useRef<HTMLDivElement>(null);
   const vista = useTurno();
   const passado = vista.ano !== ANO_ATUAL;
   const eleicaoVista = codigos(vista.ano, vista.turno).presidente;
@@ -100,10 +100,7 @@ export default function Painel() {
 
   useAtualizacao(atualizar);
 
-  function selecionar(uf: string | null) {
-    setSelecionado((atual) => (atual === uf ? null : uf));
-    if (uf) setTimeout(() => detalheRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50);
-  }
+  const selecionar = (uf: string | null) => setSelecionado(uf);
 
   const a = br?.cands[0]?.n ?? "";
   const b = br?.cands[1]?.n ?? "";
@@ -175,11 +172,15 @@ export default function Painel() {
                 />
               </div>
               {!passado && <LinhaDoTempo momentos={fotos.map((f) => f.momento)} indice={indice} onMudar={setIndice} />}
-              <div ref={detalheRef}>
-                {selecionado && dados[selecionado] && (
-                  <DetalheEstado d={dados[selecionado]} br={br} onFechar={() => setSelecionado(null)} />
+              <Modal
+                aberto={!!selecionado && !!dadosVer[selecionado]}
+                onFechar={() => setSelecionado(null)}
+                rotulo={selecionado ? NOMES[selecionado] : ""}
+              >
+                {selecionado && dadosVer[selecionado] && (
+                  <DetalheEstado d={dadosVer[selecionado]} br={brVer!} onFechar={() => setSelecionado(null)} />
                 )}
-              </div>
+              </Modal>
             </div>
 
             <div className="flex min-h-0 flex-col gap-4 sm:gap-5 xl:gap-4 xl:overflow-y-auto xl:pl-1 rolagem">

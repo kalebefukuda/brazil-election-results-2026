@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ufDoMunicipio } from "@/lib/brasil";
+import { NOMES, cor, ufDoMunicipio } from "@/lib/brasil";
 import { lider, type Dados } from "@/lib/calc";
 import { corDoMapa, type ModoCor } from "@/lib/cores";
 import { codigos } from "@/lib/eleicao";
@@ -12,6 +12,9 @@ import BuscaCidade from "./BuscaCidade";
 import { CamadaMunicipios, contarLideres, useMunicipios } from "./CamadaMunicipios";
 import Dica, { CirculoPulsando, type Tip } from "./Dica";
 import Legenda, { type ModoMapa } from "./Legenda";
+import DetalheMunicipio from "../DetalheMunicipio";
+import Escolha from "../ui/Escolha";
+import Modal from "../ui/Modal";
 
 type Props = {
   dados: Dados;
@@ -59,6 +62,7 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar, soEst
   const [tip, setTip] = useState<Tip | null>(null);
   const [destaque, setDestaque] = useState<string | null>(null);
   const [posDestaque, setPosDestaque] = useState<Tip | null>(null);
+  const [municipio, setMunicipio] = useState<string | null>(null);
   const cardRef = useRef<HTMLElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const destaqueRef = useRef<SVGPathElement>(null);
@@ -139,8 +143,8 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar, soEst
 
   function clicar(e: React.MouseEvent<SVGSVGElement>) {
     const alvo = e.target as SVGElement;
-    const uf = alvo.dataset.uf ?? (alvo.dataset.cdi ? ufDoMunicipio(alvo.dataset.cdi) : undefined);
-    if (uf) onSelecionar(uf);
+    if (alvo.dataset.cdi) setMunicipio(alvo.dataset.cdi);
+    else if (alvo.dataset.uf) onSelecionar(alvo.dataset.uf);
   }
 
   return (
@@ -159,32 +163,18 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar, soEst
             {t}
           </button>
         ))}
-        <label
-          className={`btn relative inline-flex !min-h-[32px] cursor-pointer items-center gap-1.5 !text-[12px] ${modo === "candidato" ? "ativo" : ""}`}
-        >
-          {modo === "candidato" ? nomeDe(cand)?.nome.split(" ")[0] : "Candidato"}
-          <span aria-hidden className="text-[9px] opacity-60">
-            ▼
-          </span>
-          <select
-            aria-label="Ver o mapa de um candidato"
-            className="absolute inset-0 cursor-pointer opacity-0"
-            value={modo === "candidato" ? cand : ""}
-            onChange={(e) => {
-              setCand(e.target.value);
-              setModo("candidato");
-            }}
-          >
-            <option value="" disabled>
-              Candidato
-            </option>
-            {br.cands.map((c) => (
-              <option key={c.n} value={c.n}>
-                {c.nome}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Escolha
+          rotulo="Ver o mapa de um candidato"
+          valor={modo === "candidato" ? cand : ""}
+          opcoes={br.cands.map((c) => ({ valor: c.n, texto: c.nome, cor: cor(c.n), detalhe: c.partido }))}
+          onMudar={(n) => {
+            setCand(n);
+            setModo("candidato");
+          }}
+          rotuloBotao={modo === "candidato" ? nomeDe(cand)?.nome.split(" ")[0] : "Candidato"}
+          ativo={modo === "candidato"}
+          className="!min-h-[32px]"
+        />
         {mostrarMun && (
           <div className="ml-auto">
             <BuscaCidade porUf={porUf} onEscolher={setDestaque} />
@@ -303,6 +293,29 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar, soEst
       ) : (
         mostrarMun && posDestaque && <Dica tip={posDestaque} dados={dados} porUf={porUf} nomeDe={nomeDe} fixo />
       )}
+
+      <Modal
+        aberto={!!municipio && !!porUf[ufDoMunicipio(municipio)]}
+        onFechar={() => setMunicipio(null)}
+        rotulo={
+          municipio
+            ? `${porUf[ufDoMunicipio(municipio)]?.nomes[municipio] ?? "Município"}, ${NOMES[ufDoMunicipio(municipio)]}`
+            : ""
+        }
+      >
+        {municipio && porUf[ufDoMunicipio(municipio)] && (
+          <DetalheMunicipio
+            d={porUf[ufDoMunicipio(municipio)]}
+            cdi={municipio}
+            br={br}
+            onFechar={() => setMunicipio(null)}
+            onVerEstado={(uf) => {
+              setMunicipio(null);
+              onSelecionar(uf);
+            }}
+          />
+        )}
+      </Modal>
     </section>
   );
 }

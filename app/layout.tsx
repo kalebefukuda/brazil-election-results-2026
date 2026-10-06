@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/inter";
 import { Analytics } from "@vercel/analytics/next";
+import Faixa from "@/components/Faixa";
 import Nav from "@/components/Nav";
 import Rodape from "@/components/Rodape";
 import { AutoProvider } from "@/lib/auto";
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <AutoProvider>
+          <Faixa />
           <Nav />
           {children}
           <Rodape />

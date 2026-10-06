@@ -194,3 +194,28 @@ select:disabled {
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
 }
+
+/* slider da linha do tempo */
+.tempo {
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  cursor: pointer;
+}
+.tempo::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 3px solid var(--card);
+  box-shadow: 0 0 0 1px var(--ink3);
+}
+.tempo::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 3px solid var(--card);
+}

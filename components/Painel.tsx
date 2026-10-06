@@ -1,10 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAtualizacao } from "@/lib/auto";
 import { UFS } from "@/lib/brasil";
 import { baixar, type Resumo } from "@/lib/tse";
+import { ELEICOES } from "@/lib/eleicao";
+import { descobrirTurno } from "@/lib/turno";
 import type { Dados } from "@/lib/calc";
+import { fotoParaResumo, horaBrasilia, type Historico } from "@/lib/historico";
 import Topo from "./Topo";
 import Manchete from "./Manchete";
 import RegioesCompacto from "./RegioesCompacto";
@@ -16,8 +19,8 @@ import Saldo from "./Saldo";
 import Regioes from "./Regioes";
 import Evolucao, { type Ponto } from "./Evolucao";
 import Tabela from "./Tabela";
-
-const CHAVE_HIST = "hist-6257";
+import Feed from "./Feed";
+import LinhaDoTempo from "./LinhaDoTempo";
 
 export default function Painel() {
   const [br, setBr] = useState<Resumo | null>(null);
@@ -25,18 +28,31 @@ export default function Painel() {
   const [erro, setErro] = useState("");
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [hist, setHist] = useState<Ponto[]>([]);
+  const [historico, setHistorico] = useState<Historico | null>(null);
+  const [indice, setIndice] = useState<number | null>(null); // null = ao vivo; número = foto da linha do tempo
   const detalheRef = useRef<HTMLDivElement>(null);
 
-  // histórico salvo no navegador (só pra este visitante)
+  const [chaveHist, setChaveHist] = useState<string | null>(null);
+
+  // histórico salvo no navegador (só pra este visitante), um por turno
   useEffect(() => {
+    if (!chaveHist) return;
     try {
-      const salvo = localStorage.getItem(CHAVE_HIST);
-      if (salvo) setHist(JSON.parse(salvo));
+      const salvo = localStorage.getItem(chaveHist);
+      setHist(salvo ? JSON.parse(salvo) : []);
     } catch {}
-  }, []);
+  }, [chaveHist]);
 
   const atualizar = useCallback(async () => {
+    const turno = await descobrirTurno();
+    const chave = `hist-${ELEICOES[turno].presidente}`;
+    setChaveHist(chave);
     const todos = ["br", ...UFS];
+    // histórico (linha do tempo + feed) vem do coletor; se falhar, o resto do painel segue normal
+    fetch(`/api/historico?e=${ELEICOES[turno].presidente}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((h: Historico | null) => h && setHistorico(h))
+      .catch(() => {});
     const res = await Promise.allSettled(todos.map((uf) => baixar(uf)));
     const novos: Dados = {};
     const falhas: string[] = [];
@@ -53,7 +69,7 @@ export default function Painel() {
     setDados((antigos) => ({ ...antigos, ...novos }));
 
     if (falhas.length === todos.length) {
-      setErro("Não consegui falar com o TSE agora. Vou tentar de novo sozinho — ou toque em Atualizar.");
+      setErro("Não consegui falar com o TSE agora. Vou tentar de novo sozinho na próxima atualização.");
     } else if (falhas.length) {
       setErro(`Alguns estados não vieram (${falhas.join(", ")}). Mostrando o último dado deles.`);
     } else setErro("");
@@ -65,7 +81,7 @@ export default function Painel() {
         if (h.length && h[h.length - 1].hora === n.hora) return h;
         const novo = [...h, { hora: n.hora, pst: n.pst, a: a.pct, b: b.pct, an: a.n, bn: b.n }].slice(-400);
         try {
-          localStorage.setItem(CHAVE_HIST, JSON.stringify(novo));
+          localStorage.setItem(chave, JSON.stringify(novo));
         } catch {}
         return novo;
       });
@@ -82,6 +98,35 @@ export default function Painel() {
 
   const a = br?.cands[0]?.n ?? "";
   const b = br?.cands[1]?.n ?? "";
+
+  // replay: monta Brasil e estados no formato do dado ao vivo a partir da foto escolhida
+  const fotos = historico?.fotos ?? [];
+  const foto = indice !== null ? fotos[indice] : undefined;
+  const vendo = useMemo(() => {
+    if (!br || !foto || !historico) return null;
+    const ufs: Dados = {};
+    for (const [uf, v] of Object.entries(foto.ufs)) {
+      ufs[uf] = fotoParaResumo(uf, v, historico.cands, foto.momento, dados[uf] ?? br);
+    }
+    return { br: fotoParaResumo("br", foto.br, historico.cands, foto.momento, br), dados: ufs };
+  }, [br, foto, historico, dados]);
+  const brVer = vendo?.br ?? br;
+  const dadosVer = vendo?.dados ?? dados;
+
+  // gráfico: pontos do servidor (desde o começo da apuração); sem eles, os salvos neste navegador
+  const pontos = useMemo<Ponto[]>(() => {
+    if (!historico || historico.fotos.length < 2 || !br) return hist;
+    const [ca, cb] = br.cands;
+    const ia = historico.cands.indexOf(ca.n);
+    const ib = historico.cands.indexOf(cb.n);
+    if (ia < 0 || ib < 0) return hist;
+    return historico.fotos.map((f) => {
+      const [st, ts, vv] = f.br;
+      const v = (i: number) => (vv ? (f.br[9 + i] / vv) * 100 : 0);
+      return { hora: horaBrasilia(f.momento), pst: ts ? (st / ts) * 100 : 0, a: v(ia), b: v(ib), an: ca.n, bn: cb.n };
+    });
+  }, [historico, hist, br]);
+  const doServidor = pontos !== hist;
 
   return (
     <main className="mx-auto max-w-[1240px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8 xl:max-w-[1680px] xl:pt-4">
@@ -102,16 +147,25 @@ export default function Painel() {
           {/* painel: no desktop grande vira 3 colunas numa tela só, cada coluna rola sozinha */}
           <div className="grid grid-cols-1 gap-4 sm:gap-5 xl:h-[calc(100vh-57px-32px)] xl:grid-cols-[360px_minmax(0,1fr)_360px] xl:gap-4">
             <div className="flex min-h-0 flex-col gap-4 sm:gap-5 xl:gap-4 xl:overflow-y-auto xl:pr-1 rolagem">
-              <Manchete br={br} />
+              <Manchete br={brVer!} />
               <div className="hidden xl:block">
-                <Evolucao hist={hist} br={br} />
+                <Evolucao hist={pontos} br={br} doServidor={doServidor} />
               </div>
             </div>
 
             <div className="flex min-h-0 flex-col gap-4 xl:overflow-y-auto rolagem">
               <div className="xl:min-h-0 xl:flex-1">
-                <Mapa dados={dados} br={br} a={a} b={b} selecionado={selecionado} onSelecionar={selecionar} />
+                <Mapa
+                  dados={dadosVer}
+                  br={brVer!}
+                  a={a}
+                  b={b}
+                  selecionado={selecionado}
+                  onSelecionar={selecionar}
+                  soEstados={indice !== null}
+                />
               </div>
+              <LinhaDoTempo momentos={fotos.map((f) => f.momento)} indice={indice} onMudar={setIndice} />
               <div ref={detalheRef}>
                 {selecionado && dados[selecionado] && (
                   <DetalheEstado d={dados[selecionado]} br={br} onFechar={() => setSelecionado(null)} />
@@ -120,10 +174,13 @@ export default function Painel() {
             </div>
 
             <div className="flex min-h-0 flex-col gap-4 sm:gap-5 xl:gap-4 xl:overflow-y-auto xl:pl-1 rolagem">
-              <RegioesCompacto dados={dados} br={br} a={a} b={b} />
+              <RegioesCompacto dados={dadosVer} br={brVer!} a={a} b={b} />
+              <div className="xl:min-h-[320px] xl:flex-1 xl:overflow-hidden xl:[&>section]:h-full">
+                <Feed eventos={historico?.eventos ?? []} br={br} />
+              </div>
               <Projecao dados={dados} br={br} />
               <div className="xl:hidden">
-                <Evolucao hist={hist} br={br} />
+                <Evolucao hist={pontos} br={br} doServidor={doServidor} />
               </div>
             </div>
           </div>

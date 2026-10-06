@@ -10,7 +10,7 @@ export type Ponto = { hora: string; pst: number; a: number; b: number; an: strin
 const ALTURA = 240;
 const M = { t: 12, r: 14, b: 30, l: 40 };
 
-export default function Evolucao({ hist, br }: { hist: Ponto[]; br: Resumo }) {
+export default function Evolucao({ hist, br, doServidor = false }: { hist: Ponto[]; br: Resumo; doServidor?: boolean }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [largura, setLargura] = useState(500);
   const [hover, setHover] = useState<number | null>(null);
@@ -151,7 +151,9 @@ export default function Evolucao({ hist, br }: { hist: Ponto[]; br: Resumo }) {
       </div>
 
       <p className="mt-2 text-[11.5px] text-ink3">
-        Os pontos ficam salvos no seu navegador, a partir de quando você abriu a página.
+        {doServidor
+          ? "Um ponto a cada totalização do TSE, desde o começo da apuração."
+          : "Os pontos ficam salvos no seu navegador, a partir de quando você abriu a página."}
       </p>
     </section>
   );

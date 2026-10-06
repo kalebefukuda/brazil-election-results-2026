@@ -9,6 +9,7 @@ import { larguraPagina } from "@/lib/brasil";
 import { escolherAno, escolherTurno, useTurno } from "@/lib/turno";
 import { ANO_ATUAL, ANOS, type Ano } from "@/lib/eleicao";
 import { IconePausa, IconePessoas, IconePlay } from "./Icones";
+import Escolha from "./ui/Escolha";
 
 export default function Nav() {
   const path = usePathname();
@@ -99,10 +100,10 @@ export default function Nav() {
             botaoTema
           ) : (
             <>
-              <Seletor
+              <Escolha
                 rotulo="Ano da eleição"
-                valor={turno.ano}
-                opcoes={ANOS.map((a) => [a, String(a)])}
+                valor={String(turno.ano)}
+                opcoes={ANOS.map((a) => ({ valor: String(a), texto: String(a) }))}
                 onMudar={(a) => {
                   escolherAno(Number(a) as Ano);
                   auto.agora();
@@ -166,14 +167,15 @@ export default function Nav() {
               </span>
               {/* ano passado: intervalo e pausa somem mas guardam o lugar, pra nada pular */}
               <div className={`flex items-center gap-1.5 ${passado ? "invisible" : ""}`} aria-hidden={passado}>
-                <Seletor
+                <Escolha
                   rotulo="Intervalo de atualização"
-                  valor={auto.intervalo}
+                  valor={String(auto.intervalo)}
                   opcoes={[
-                    [60, "1 min"],
-                    [120, "2 min"],
-                    [300, "5 min"],
+                    { valor: "60", texto: "1 min" },
+                    { valor: "120", texto: "2 min" },
+                    { valor: "300", texto: "5 min" },
                   ]}
+                  alinhar="direita"
                   onMudar={(v) => auto.setIntervalo(Number(v))}
                   desligado={passado}
                 />
@@ -194,55 +196,5 @@ export default function Nav() {
         </div>
       </div>
     </header>
-  );
-}
-
-// select invisível por cima de um botão desenhado (texto + setinha)
-function Seletor({
-  rotulo,
-  valor,
-  opcoes,
-  onMudar,
-  className = "",
-  desligado = false,
-}: {
-  rotulo: string;
-  valor: number;
-  opcoes: [number, string][];
-  onMudar: (v: string) => void;
-  className?: string;
-  desligado?: boolean;
-}) {
-  const atual = opcoes.find(([v]) => v === valor)?.[1] ?? "";
-  return (
-    <label
-      className={`btn relative inline-flex !min-h-[34px] flex-none items-center gap-2 !pl-3 !pr-2.5 !text-[12px] ${className}`}
-    >
-      {atual}
-      <svg viewBox="0 0 12 12" className="h-3 w-3 text-ink3" aria-hidden>
-        <path
-          d="M3 4.5 6 7.5l3-3"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <select
-        aria-label={rotulo}
-        className="absolute inset-0 cursor-pointer opacity-0"
-        value={valor}
-        onChange={(e) => onMudar(e.target.value)}
-        disabled={desligado}
-        tabIndex={desligado ? -1 : undefined}
-      >
-        {opcoes.map(([v, t]) => (
-          <option key={v} value={v}>
-            {t}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }

@@ -10,6 +10,7 @@ import { fmt, pct } from "@/lib/format";
 import { useAtualizacao } from "@/lib/auto";
 import { chaveEleicao, descobrirTurno, useTurno } from "@/lib/turno";
 import Situacao from "./Situacao";
+import Escolha from "../ui/Escolha";
 import { IconeMapa, IconeVoltar } from "../Icones";
 
 const UFS_POR_NOME = [...UFS_ESTADOS].sort((a, b) => NOMES[a].localeCompare(NOMES[b], "pt-BR"));
@@ -72,23 +73,20 @@ export default function PaginaEstado({ uf }: { uf: string }) {
             <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">
               {NOMES[uf]}
             </h1>
-            <label className="relative inline-flex items-center">
-              <span className="pointer-events-none absolute left-3 text-ink3">
-                <IconeMapa />
-              </span>
-              <select
-                className="btn !pl-9"
-                value={uf}
-                onChange={(e) => router.push(`/estados/${e.target.value}?cargo=${cargo}`)}
-                aria-label="Trocar de estado"
-              >
-                {UFS_POR_NOME.map((u) => (
-                  <option key={u} value={u}>
-                    {NOMES[u]}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <Escolha
+              rotulo="Trocar de estado"
+              valor={uf}
+              opcoes={UFS_POR_NOME.map((u) => ({ valor: u, texto: NOMES[u], detalhe: u.toUpperCase() }))}
+              onMudar={(u) => {
+                const q = new URLSearchParams(params);
+                router.push(`/estados/${u}?${q}`);
+              }}
+              rotuloBotao={
+                <span className="inline-flex items-center gap-2">
+                  <IconeMapa /> Trocar de estado
+                </span>
+              }
+            />
           </div>
           {r && (
             <p className="num mt-2 text-[13px] text-ink2">

@@ -62,10 +62,10 @@ select cron.schedule(
      ) $$
 );
 
--- municípios (≈5.570 arquivos, com freio): a cada 3 minutos
+-- municípios (≈5.570 arquivos, com freio): a cada 5 minutos
 select cron.schedule(
   'apuracao-municipios',
-  '*/3 * * * *',
+  '*/5 * * * *',
   $$ select net.http_get(
        url := 'https://SITE/api/coletar/municipios',
        headers := jsonb_build_object('x-coletor-segredo', 'SEGREDO'),

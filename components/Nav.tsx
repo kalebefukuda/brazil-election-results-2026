@@ -5,12 +5,24 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuto } from "@/lib/auto";
 import { useOnline } from "@/lib/online";
+import { larguraPagina } from "@/lib/brasil";
+import { escolherAno, escolherTurno, useTurno } from "@/lib/turno";
+import { ANO_ATUAL, ANOS, type Ano } from "@/lib/eleicao";
 import { IconePausa, IconePessoas, IconePlay } from "./Icones";
 
 export default function Nav() {
   const path = usePathname();
   const auto = useAuto();
   const online = useOnline();
+  const turno = useTurno();
+  // só presidente e governador têm 2º turno
+  const comTurno = path === "/" || path.startsWith("/estados");
+  const passado = turno.ano !== ANO_ATUAL;
+  // links levam o ano/turno escolhido junto, pra URL sempre mostrar o que está na tela
+  const q = new URLSearchParams();
+  if (passado) q.set("ano", String(turno.ano));
+  if (turno.escolhido) q.set("turno", String(turno.escolhido));
+  const sufixo = q.size ? `?${q}` : "";
   const [tema, setTema] = useState("dark");
 
   useEffect(() => {
@@ -39,6 +51,9 @@ export default function Nav() {
   if (auto.atualizando) {
     status = "atualizando…";
     statusCurto = "…";
+  } else if (passado && auto.ultima) {
+    status = "resultado final";
+    statusCurto = "final";
   } else if (auto.ultima) {
     status = auto.rodando ? `ao vivo · ${Math.max(auto.falta, 0)}s` : "pausado";
     statusCurto = auto.rodando ? `${Math.max(auto.falta, 0)}s` : "pausado";
@@ -52,14 +67,14 @@ export default function Nav() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-[color-mix(in_srgb,var(--bg)_90%,transparent)] backdrop-blur">
-      <div className="mx-auto flex max-w-[1240px] flex-col px-4 sm:px-6 lg:h-[56px] lg:flex-row lg:items-center lg:gap-4">
+      <div className={`mx-auto flex ${larguraPagina(path)} flex-col px-4 sm:px-6 lg:h-[56px] lg:flex-row lg:items-center lg:gap-4`}>
         {/* linha 1: navegação */}
         <div className="flex h-[48px] items-center gap-1 lg:h-auto">
           <nav className="flex min-w-0 gap-1 overflow-x-auto" aria-label="Seções">
             {links.map((l) => (
               <Link
                 key={l.href}
-                href={l.href}
+                href={`${l.href}${sufixo}`}
                 className={`whitespace-nowrap rounded-lg px-2 py-2 text-[12.5px] font-medium transition-colors sm:px-3 sm:text-[13px] ${
                   l.ativo ? "bg-card text-ink" : "text-ink2 hover:text-ink"
                 }`}
@@ -73,6 +88,41 @@ export default function Nav() {
 
         {/* linha 2 (no celular) / direita (no desktop): ao vivo + controles */}
         <div className="flex h-[44px] items-center gap-1.5 overflow-x-auto lg:ml-auto lg:h-auto">
+          <Seletor
+            rotulo="Ano da eleição"
+            valor={turno.ano}
+            opcoes={ANOS.map((a) => [a, String(a)])}
+            onMudar={(a) => {
+              escolherAno(Number(a) as Ano);
+              auto.agora();
+            }}
+            className="num font-semibold"
+          />
+          {comTurno && (
+            <div className="inline-flex h-[34px] flex-none rounded-full border border-line p-0.5" role="group" aria-label="Turno">
+              {([1, 2] as const).map((t) => {
+                const bloqueado = t === 2 && !passado && !turno.tem2;
+                return (
+                  <button
+                    key={t}
+                    className={`whitespace-nowrap rounded-full px-3 text-[12px] font-medium transition-colors ${
+                      turno.turno === t ? "bg-ink text-bg" : "text-ink2 hover:text-ink"
+                    } disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink2`}
+                    aria-pressed={turno.turno === t}
+                    disabled={bloqueado}
+                    title={bloqueado ? "O 2º turno é em 25/10. Aparece aqui quando o TSE publicar os primeiros dados." : undefined}
+                    onClick={() => {
+                      if (turno.turno === t) return;
+                      escolherTurno(t);
+                      auto.agora();
+                    }}
+                  >
+                    {t}º turno
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {online !== null && (
             <span
               className="num inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full border border-line px-3 text-[12px] text-ink2"
@@ -84,38 +134,85 @@ export default function Nav() {
             </span>
           )}
           <span
-            className="num inline-flex h-[34px] items-center gap-2 whitespace-nowrap rounded-full border border-line px-3 text-[12px] text-ink2"
+            className="num inline-flex h-[34px] items-center gap-2 whitespace-nowrap rounded-full border border-line px-3 text-[12px] text-ink2 sm:min-w-[128px]"
             aria-live="polite"
             title={auto.ultima ? `Última atualização às ${auto.ultima}` : undefined}
           >
             <span
-              className={`h-2 w-2 flex-none rounded-full ${auto.rodando ? "pulso" : ""}`}
-              style={{ background: auto.rodando ? "var(--ok)" : "var(--ink3)" }}
+              className={`h-2 w-2 flex-none rounded-full ${auto.rodando && !passado ? "pulso" : ""}`}
+              style={{ background: auto.rodando && !passado ? "var(--ok)" : "var(--ink3)" }}
             />
             <span className="sm:hidden">{statusCurto}</span>
             <span className="hidden sm:inline">{status}</span>
           </span>
-          <select
-            className="btn !min-h-[34px] !px-2 !text-[12px]"
-            value={auto.intervalo}
-            onChange={(e) => auto.setIntervalo(Number(e.target.value))}
-            aria-label="Intervalo de atualização"
-          >
-            <option value={60}>1 min</option>
-            <option value={120}>2 min</option>
-            <option value={300}>5 min</option>
-          </select>
-          <button
-            className="btn !min-h-[34px] !px-2.5"
-            onClick={auto.pausar}
-            aria-label={auto.rodando ? "Pausar atualização" : "Retomar atualização"}
-            title={auto.rodando ? "Pausar" : "Retomar"}
-          >
-            {auto.rodando ? <IconePausa /> : <IconePlay />}
-          </button>
+          {/* ano passado não muda: intervalo e pausa somem, mas guardam o lugar pra nada pular */}
+          <div className={`flex items-center gap-1.5 ${passado ? "invisible" : ""}`} aria-hidden={passado}>
+            <Seletor
+              rotulo="Intervalo de atualização"
+              valor={auto.intervalo}
+              opcoes={[
+                [60, "1 min"],
+                [120, "2 min"],
+                [300, "5 min"],
+              ]}
+              onMudar={(v) => auto.setIntervalo(Number(v))}
+              desligado={passado}
+            />
+            <button
+              className="btn !min-h-[34px] !px-2.5"
+              onClick={auto.pausar}
+              aria-label={auto.rodando ? "Pausar atualização" : "Retomar atualização"}
+              title={auto.rodando ? "Pausar" : "Retomar"}
+              disabled={passado}
+              tabIndex={passado ? -1 : undefined}
+            >
+              {auto.rodando ? <IconePausa /> : <IconePlay />}
+            </button>
+          </div>
           {botaoTema}
         </div>
       </div>
     </header>
+  );
+}
+
+// select com cara de botão: o texto e a setinha são desenhados, o select de verdade fica invisível por cima
+function Seletor({
+  rotulo,
+  valor,
+  opcoes,
+  onMudar,
+  className = "",
+  desligado = false,
+}: {
+  rotulo: string;
+  valor: number;
+  opcoes: [number, string][];
+  onMudar: (v: string) => void;
+  className?: string;
+  desligado?: boolean;
+}) {
+  const atual = opcoes.find(([v]) => v === valor)?.[1] ?? "";
+  return (
+    <label className={`btn relative inline-flex !min-h-[34px] flex-none items-center gap-2 !pl-3 !pr-2.5 !text-[12px] ${className}`}>
+      {atual}
+      <svg viewBox="0 0 12 12" className="h-3 w-3 text-ink3" aria-hidden>
+        <path d="M3 4.5 6 7.5l3-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <select
+        aria-label={rotulo}
+        className="absolute inset-0 cursor-pointer opacity-0"
+        value={valor}
+        onChange={(e) => onMudar(e.target.value)}
+        disabled={desligado}
+        tabIndex={desligado ? -1 : undefined}
+      >
+        {opcoes.map(([v, t]) => (
+          <option key={v} value={v}>
+            {t}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

@@ -15,11 +15,33 @@ const CORES_PARTIDO: Record<string, string> = {
   PODE: "#9b6ad6",
   AVANTE: "#33b5c6",
   MISSÃO: "#c9a23a",
+  "PC DO B": "#b83a5e",
+  PV: "#3f9e5a",
+  CIDADANIA: "#e07fa0",
+  SOLIDARIEDADE: "#c77b3a",
+  PTB: "#7d8fa8",
+  PATRIOTA: "#5c7fa3",
+  PSC: "#8aa64a",
+  PROS: "#d98b5f",
+};
+
+// siglas de 2018/2022 que mudaram de nome ou se fundiram: herdam cor e campo do partido de hoje
+const SUCESSOR: Record<string, string> = {
+  PSL: "UNIÃO",
+  DEM: "UNIÃO",
+  PR: "PL",
+  PRB: "REPUBLICANOS",
+  PPS: "CIDADANIA",
+  PHS: "PODE",
+  PATRI: "PATRIOTA",
+  PRP: "PATRIOTA",
+  PPL: "PC DO B",
 };
 
 // federação vem como "PT/PC do B/PV" ou "PRD / SOLIDARIEDADE": usa o primeiro partido
 export function partidoPrincipal(sigla: string) {
-  return sigla.split("/")[0].trim().toUpperCase();
+  const p = sigla.split("/")[0].trim().toUpperCase();
+  return SUCESSOR[p] ?? p;
 }
 
 export function corPartido(sigla: string) {
@@ -28,7 +50,7 @@ export function corPartido(sigla: string) {
 
 // agrupamento aproximado por campo político, no estilo do que a imprensa costuma usar
 const ESQUERDA = ["PT", "PSOL", "PC DO B", "PCDOB", "PV", "REDE", "PSB", "PDT", "UP", "PCB", "PSTU", "PCO"];
-const CENTRO = ["MDB", "PSD", "PSDB", "CIDADANIA", "SOLIDARIEDADE", "AVANTE", "PODE", "PRD", "PMB", "AGIR"];
+const CENTRO = ["MDB", "PSD", "PSDB", "CIDADANIA", "SOLIDARIEDADE", "AVANTE", "PODE", "PRD", "PMB", "AGIR", "PROS", "PMN", "PTC"];
 
 export type Campo = "esquerda" | "centro" | "direita";
 

@@ -7,12 +7,14 @@ import { NOMES, REGIAO_DE, REGIOES } from "@/lib/brasil";
 import { CARGOS, baixarCargo, cargosDaUf, situacaoGovernador, type CodCargo, type ResultadoCargo } from "@/lib/cargos";
 import { fmt, pct } from "@/lib/format";
 import { useAtualizacao } from "@/lib/auto";
+import { useTurno } from "@/lib/turno";
 import Situacao from "./Situacao";
 import { IconeMapa, IconeVoltar } from "../Icones";
 
 const UFS_ESTADOS = Object.values(REGIOES).flat().sort((a, b) => NOMES[a].localeCompare(NOMES[b], "pt-BR"));
 
 export default function PaginaEstado({ uf }: { uf: string }) {
+  const { ano } = useTurno();
   const router = useRouter();
   const params = useSearchParams();
   const cargos = cargosDaUf(uf);
@@ -55,7 +57,7 @@ export default function PaginaEstado({ uf }: { uf: string }) {
 
       <header className="mb-6 mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="kicker mb-2">{REGIAO_DE[uf]} · Eleições 2026</p>
+          <p className="kicker mb-2">{REGIAO_DE[uf]} · Eleições {ano}</p>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">{NOMES[uf]}</h1>
             <label className="relative inline-flex items-center">

@@ -1,12 +1,14 @@
 "use client";
 
 import type { Resumo } from "@/lib/tse";
+import { useTurno } from "@/lib/turno";
 
 export default function Topo(p: { br: Resumo | null }) {
+  const { ano, turno } = useTurno();
   return (
     <header className="mb-6 flex flex-col gap-4 sm:mb-8 ">
       <div>
-        <p className="kicker mb-2">Eleições 2026 · 1º turno</p>
+        <p className="kicker mb-2">Eleições {ano} · {turno}º turno</p>
         <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">
           Apuração para Presidente
         </h1>

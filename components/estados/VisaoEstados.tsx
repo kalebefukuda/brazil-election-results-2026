@@ -7,6 +7,7 @@ import { NOMES, REGIAO_DE, REGIOES } from "@/lib/brasil";
 import { baixarCargo, situacaoGovernador, somaApuracao, type ResultadoCargo } from "@/lib/cargos";
 import { pct } from "@/lib/format";
 import { useAtualizacao } from "@/lib/auto";
+import { useTurno } from "@/lib/turno";
 import Situacao from "./Situacao";
 import MapaSelecao from "./MapaSelecao";
 import { IconeBusca } from "../Icones";
@@ -23,6 +24,7 @@ const semAcento = (s: string) =>
 type PorUf = Record<string, { gov?: ResultadoCargo; sen?: ResultadoCargo }>;
 
 export default function VisaoEstados() {
+  const { ano, turno } = useTurno();
   const [dados, setDados] = useState<PorUf>({});
   const [erro, setErro] = useState("");
   const [regiao, setRegiao] = useState("Todas");
@@ -81,7 +83,7 @@ export default function VisaoEstados() {
     <main className="mx-auto max-w-[1240px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8">
       <header className="mb-6 flex flex-col gap-4 sm:mb-8 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="kicker mb-2">Eleições 2026 · 1º turno</p>
+          <p className="kicker mb-2">Eleições {ano} · {turno}º turno</p>
           <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">
             Governadores e Senado
           </h1>

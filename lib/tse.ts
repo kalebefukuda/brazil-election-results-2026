@@ -1,6 +1,6 @@
 // Arquivos públicos de divulgação do TSE — Presidente (cargo 0001), no turno que estiver valendo
-import { ELEICOES, definido, urlDados } from "./eleicao";
-import { turnoAtual } from "./turno";
+import { definido, ehPassada, urlDados } from "./eleicao";
+import { eleicaoAtual } from "./turno";
 
 export type Candidato = {
   n: string;
@@ -74,7 +74,7 @@ export function parse(uf: string, j: any): Resumo {
   };
 }
 
-export function urlTSE(uf: string, eleicao: string = ELEICOES[turnoAtual()].presidente) {
+export function urlTSE(uf: string, eleicao: string = eleicaoAtual().presidente) {
   return urlDados(eleicao, uf, "0001");
 }
 
@@ -82,7 +82,13 @@ export function urlTSE(uf: string, eleicao: string = ELEICOES[turnoAtual()].pres
 let usarProxy = false;
 
 export async function baixar(uf: string): Promise<Resumo> {
-  const eleicao = ELEICOES[turnoAtual()].presidente;
+  const eleicao = eleicaoAtual().presidente;
+  // ano passado: arquivo estático do próprio site, não muda
+  if (ehPassada(eleicao)) {
+    const r = await fetch(urlTSE(uf, eleicao));
+    if (!r.ok) throw new Error(`${uf}: HTTP ${r.status}`);
+    return parse(uf, await r.json());
+  }
   if (!usarProxy) {
     try {
       const r = await fetch(`${urlTSE(uf, eleicao)}?nocache=${Date.now()}`, { cache: "no-store" });

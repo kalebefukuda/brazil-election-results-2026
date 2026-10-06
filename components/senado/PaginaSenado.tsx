@@ -7,6 +7,7 @@ import { baixarCargo, somaApuracao, type ResultadoCargo } from "@/lib/cargos";
 import { campo, corPartido, partidoPrincipal, type Campo } from "@/lib/partidos";
 import { pct } from "@/lib/format";
 import { useAtualizacao } from "@/lib/auto";
+import { useTurno } from "@/lib/turno";
 import Hemiciclo, { type Cadeira } from "../Hemiciclo";
 import BarraCampos from "../BarraCampos";
 import Apurado from "../Apurado";
@@ -14,6 +15,7 @@ import Apurado from "../Apurado";
 const UFS_ESTADOS = Object.values(REGIOES).flat();
 
 export default function PaginaSenado() {
+  const { ano } = useTurno();
   const [dados, setDados] = useState<Record<string, ResultadoCargo>>({});
   const [erro, setErro] = useState("");
   const [pagina, setPagina] = useState(0);
@@ -92,7 +94,7 @@ export default function PaginaSenado() {
     <main className="mx-auto max-w-[1240px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8">
       <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="kicker mb-2">Eleições 2026 · 1º turno</p>
+          <p className="kicker mb-2">Eleições {ano}</p>
           <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">Senado</h1>
           <p className="mt-2 max-w-[62ch] text-[13px] text-ink2">
             {totalVagas} cadeiras em disputa, {totalVagas / 27} por estado. Os mais votados de cada estado ficam com as

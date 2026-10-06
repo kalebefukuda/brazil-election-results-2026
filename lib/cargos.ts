@@ -1,5 +1,5 @@
 // Eleição estadual: governador, senador e deputados, por UF (só governador tem 2º turno)
-import { ELEICOES, urlDados } from "./eleicao";
+import { codigos, ehPassada, urlDados } from "./eleicao";
 import { descobrirTurno } from "./turno";
 
 export const CARGOS = {
@@ -127,13 +127,19 @@ export function parseCargo(uf: string, cargo: CodCargo, j: any): ResultadoCargo 
   };
 }
 
-export function urlCargo(uf: string, cargo: CodCargo, eleicao: string = ELEICOES[1].estadual) {
+export function urlCargo(uf: string, cargo: CodCargo, eleicao: string) {
   return urlDados(eleicao, uf, CARGOS[cargo].arquivo);
 }
 
 let usarProxy = false;
 
 async function baixarDe(eleicao: string, uf: string, cargo: CodCargo): Promise<ResultadoCargo> {
+  // ano passado: arquivo estático do próprio site
+  if (ehPassada(eleicao)) {
+    const r = await fetch(urlCargo(uf, cargo, eleicao));
+    if (!r.ok) throw new Error("sem dados");
+    return parseCargo(uf, cargo, await r.json());
+  }
   if (!usarProxy) {
     try {
       const r = await fetch(`${urlCargo(uf, cargo, eleicao)}?nocache=${Date.now()}`, { cache: "no-store" });
@@ -151,12 +157,13 @@ async function baixarDe(eleicao: string, uf: string, cargo: CodCargo): Promise<R
 
 export async function baixarCargo(uf: string, cargo: CodCargo): Promise<ResultadoCargo> {
   // no 2º turno, só os estados que tiverem disputa de governador ganham arquivo novo; o resto segue no 1º
-  if (cargo === "3" && (await descobrirTurno()) === 2) {
+  const { ano, turno } = await descobrirTurno();
+  if (cargo === "3" && turno === 2) {
     try {
-      return await baixarDe(ELEICOES[2].estadual, uf, cargo);
+      return await baixarDe(codigos(ano, 2).estadual, uf, cargo);
     } catch {}
   }
-  return baixarDe(ELEICOES[1].estadual, uf, cargo);
+  return baixarDe(codigos(ano, 1).estadual, uf, cargo);
 }
 
 // texto curto da situação de quem tá na frente

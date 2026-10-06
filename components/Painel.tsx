@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAtualizacao } from "@/lib/auto";
 import { UFS } from "@/lib/brasil";
 import { baixar, type Resumo } from "@/lib/tse";
-import { ELEICOES } from "@/lib/eleicao";
-import { descobrirTurno } from "@/lib/turno";
+import { codigos, ehPassada } from "@/lib/eleicao";
+import { descobrirTurno, useTurno } from "@/lib/turno";
+import { ANO_ATUAL } from "@/lib/eleicao";
 import type { Dados } from "@/lib/calc";
 import { fotoParaResumo, horaBrasilia, type Historico } from "@/lib/historico";
 import Topo from "./Topo";
@@ -31,6 +32,12 @@ export default function Painel() {
   const [historico, setHistorico] = useState<Historico | null>(null);
   const [indice, setIndice] = useState<number | null>(null); // null = ao vivo; número = foto da linha do tempo
   const detalheRef = useRef<HTMLDivElement>(null);
+  const vista = useTurno();
+  // ano passado: só o resultado final (sem feed, sem gráfico da apuração, sem linha do tempo)
+  const passado = vista.ano !== ANO_ATUAL;
+
+  // trocou de ano/turno: sai do replay
+  useEffect(() => setIndice(null), [vista.ano, vista.turno]);
 
   const [chaveHist, setChaveHist] = useState<string | null>(null);
 
@@ -44,15 +51,18 @@ export default function Painel() {
   }, [chaveHist]);
 
   const atualizar = useCallback(async () => {
-    const turno = await descobrirTurno();
-    const chave = `hist-${ELEICOES[turno].presidente}`;
+    const { ano, turno } = await descobrirTurno();
+    const eleicao = codigos(ano, turno).presidente;
+    const chave = `hist-${eleicao}`;
     setChaveHist(chave);
     const todos = ["br", ...UFS];
     // histórico (linha do tempo + feed) vem do coletor; se falhar, o resto do painel segue normal
-    fetch(`/api/historico?e=${ELEICOES[turno].presidente}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((h: Historico | null) => h && setHistorico(h))
-      .catch(() => {});
+    if (ehPassada(eleicao)) setHistorico(null);
+    else
+      fetch(`/api/historico?e=${eleicao}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((h: Historico | null) => h && setHistorico(h))
+        .catch(() => {});
     const res = await Promise.allSettled(todos.map((uf) => baixar(uf)));
     const novos: Dados = {};
     const falhas: string[] = [];
@@ -148,9 +158,11 @@ export default function Painel() {
           <div className="grid grid-cols-1 gap-4 sm:gap-5 xl:h-[calc(100vh-57px-32px)] xl:grid-cols-[360px_minmax(0,1fr)_360px] xl:gap-4">
             <div className="flex min-h-0 flex-col gap-4 sm:gap-5 xl:gap-4 xl:overflow-y-auto xl:pr-1 rolagem">
               <Manchete br={brVer!} />
-              <div className="hidden xl:block">
-                <Evolucao hist={pontos} br={br} doServidor={doServidor} />
-              </div>
+              {!passado && (
+                <div className="hidden xl:block">
+                  <Evolucao hist={pontos} br={br} doServidor={doServidor} />
+                </div>
+              )}
             </div>
 
             <div className="flex min-h-0 flex-col gap-4 xl:overflow-y-auto rolagem">
@@ -165,7 +177,7 @@ export default function Painel() {
                   soEstados={indice !== null}
                 />
               </div>
-              <LinhaDoTempo momentos={fotos.map((f) => f.momento)} indice={indice} onMudar={setIndice} />
+              {!passado && <LinhaDoTempo momentos={fotos.map((f) => f.momento)} indice={indice} onMudar={setIndice} />}
               <div ref={detalheRef}>
                 {selecionado && dados[selecionado] && (
                   <DetalheEstado d={dados[selecionado]} br={br} onFechar={() => setSelecionado(null)} />
@@ -175,13 +187,17 @@ export default function Painel() {
 
             <div className="flex min-h-0 flex-col gap-4 sm:gap-5 xl:gap-4 xl:overflow-y-auto xl:pl-1 rolagem">
               <RegioesCompacto dados={dadosVer} br={brVer!} a={a} b={b} />
-              <div className="xl:min-h-[320px] xl:flex-1 xl:overflow-hidden xl:[&>section]:h-full">
-                <Feed eventos={historico?.eventos ?? []} br={br} />
-              </div>
+              {!passado && (
+                <div className="xl:min-h-[320px] xl:flex-1 xl:overflow-hidden xl:[&>section]:h-full">
+                  <Feed eventos={historico?.eventos ?? []} br={br} />
+                </div>
+              )}
               <Projecao dados={dados} br={br} />
-              <div className="xl:hidden">
-                <Evolucao hist={pontos} br={br} doServidor={doServidor} />
-              </div>
+              {!passado && (
+                <div className="xl:hidden">
+                  <Evolucao hist={pontos} br={br} doServidor={doServidor} />
+                </div>
+              )}
             </div>
           </div>
 

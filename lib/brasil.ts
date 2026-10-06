@@ -27,6 +27,11 @@ export const CORES: Record<string, string> = {
   "70": "var(--c70)",
   "55": "var(--c55)",
   "14": "var(--c14)",
+  // 2022 e 2018
+  "17": "var(--c22)", // Bolsonaro em 2018 (PSL)
+  "12": "var(--c70)", // Ciro (PDT)
+  "15": "var(--c55)", // Simone Tebet (MDB)
+  "45": "var(--c14)", // Alckmin (PSDB)
 };
 
 export function cor(n?: string | null) {
@@ -47,3 +52,6 @@ export function ufDoMunicipio(cdi: string) {
 }
 
 export const UFS_ESTADOS = Object.values(REGIOES).flat();
+
+// a página de Presidente usa a tela toda no desktop grande; as outras ficam em 1240px
+export const larguraPagina = (path: string) => `max-w-[1240px] ${path === "/" ? "xl:max-w-[1680px]" : ""}`;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Resumo } from "@/lib/tse";
 import { cor } from "@/lib/brasil";
+import { useTurno } from "@/lib/turno";
 import { curto, fmt, pct } from "@/lib/format";
 import Foto from "./Foto";
 import Apurado from "./Apurado";
@@ -18,6 +19,7 @@ export default function Manchete({ br }: { br: Resumo }) {
   const brancosNulos = br.total ? ((br.brancos + br.nulos) / br.total) * 100 : 0;
   const primeiroNome = (nome: string) => nome.split(" ")[0];
   const [copiado, setCopiado] = useState(false);
+  const { ano, turno } = useTurno();
 
   let titulo = (
     <>
@@ -27,7 +29,7 @@ export default function Manchete({ br }: { br: Resumo }) {
   if (br.definido === "e")
     titulo = (
       <>
-        <span style={{ color: cor(a.n) }}>{a.nome}</span> está eleito no 1º turno
+        <span style={{ color: cor(a.n) }}>{a.nome}</span> {turno === 1 ? "está eleito no 1º turno" : "foi eleito presidente"}
       </>
     );
   else if (br.definido === "s")
@@ -40,11 +42,11 @@ export default function Manchete({ br }: { br: Resumo }) {
 
   // no celular abre o menu de compartilhar do sistema; no computador copia o resumo + link
   async function compartilhar() {
-    const texto = `Apuração Presidente 2026 (${pct(br.pst, 1)} das seções): ${a.nome} ${pct(a.pct, 1)} × ${b.nome} ${pct(b.pct, 1)}`;
+    const texto = `Apuração Presidente ${ano} · ${turno}º turno (${pct(br.pst, 1)} das seções): ${a.nome} ${pct(a.pct, 1)} × ${b.nome} ${pct(b.pct, 1)}`;
     const celular = window.matchMedia("(pointer: coarse)").matches;
     try {
       if (celular && navigator.share) {
-        await navigator.share({ title: "Apuração Presidente 2026", text: texto, url: location.href });
+        await navigator.share({ title: `Apuração Presidente ${ano}`, text: texto, url: location.href });
         return;
       }
       await navigator.clipboard.writeText(`${texto}\n${location.href}`);

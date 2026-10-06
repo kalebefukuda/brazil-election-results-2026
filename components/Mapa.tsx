@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { PATHS } from "@/lib/mapa-paths";
 import { NOMES, cor, ufDoMunicipio } from "@/lib/brasil";
 import { lider, type Dados } from "@/lib/calc";
-import { ELEICOES } from "@/lib/eleicao";
+import { codigos } from "@/lib/eleicao";
 import { useTurno } from "@/lib/turno";
 import type { Resumo } from "@/lib/tse";
 import { fmt, pct } from "@/lib/format";
@@ -56,9 +56,9 @@ export default function Mapa({ dados, br, a, b, selecionado, onSelecionar, soEst
   const svgRef = useRef<SVGSVGElement>(null);
   const destaqueRef = useRef<SVGPathElement>(null);
 
-  const turno = useTurno();
+  const eleicaoVista = useTurno();
   const usaMunicipio = modo !== "estados" && !soEstados;
-  const { malha, porUf, indisponivel } = useMunicipios(usaMunicipio, ELEICOES[turno].presidente);
+  const { malha, porUf, indisponivel } = useMunicipios(usaMunicipio, codigos(eleicaoVista.ano, eleicaoVista.turno).presidente);
   // no replay (ou sem coletor) o modo Municípios vira Estados; os outros modos funcionam por estado
   const legenda: Modo = (soEstados || indisponivel) && modo === "municipios" ? "estados" : modo;
   const lideresMun = useMemo(() => contarLideres(porUf), [porUf]);

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Resumo } from "@/lib/tse";
 import { cor } from "@/lib/brasil";
 import { pct } from "@/lib/format";
+import { useTurno } from "@/lib/turno";
 
 export type Ponto = { hora: string; pst: number; a: number; b: number; an: string; bn: string };
 
@@ -11,6 +12,7 @@ const ALTURA = 240;
 const M = { t: 12, r: 14, b: 30, l: 40 };
 
 export default function Evolucao({ hist, br, doServidor = false }: { hist: Ponto[]; br: Resumo; doServidor?: boolean }) {
+  const { turno } = useTurno();
   const boxRef = useRef<HTMLDivElement>(null);
   const [largura, setLargura] = useState(500);
   const [hover, setHover] = useState<number | null>(null);
@@ -74,7 +76,7 @@ export default function Evolucao({ hist, br, doServidor = false }: { hist: Ponto
         ))}
         <span className="inline-flex items-center gap-1.5 text-ink3">
           <span className="w-4 border-t border-dashed border-ink3" />
-          50% (vence no 1º turno)
+          {turno === 1 ? "50% (vence no 1º turno)" : "50%"}
         </span>
       </div>
 

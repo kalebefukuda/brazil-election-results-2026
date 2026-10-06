@@ -4,6 +4,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import { useAuto } from "@/lib/auto";
 import { UFS_ESTADOS, cor, ufDoMunicipio } from "@/lib/brasil";
 import type { MunUf } from "@/lib/municipios";
+import { urlMunicipiosUf } from "@/lib/eleicao";
 
 export type Malha = { viewBox: string; mun: Record<string, string> };
 export type ModoMun = "lider" | "vantagem" | "candidato" | "apurado";
@@ -43,7 +44,7 @@ export function useMunicipios(ativo: boolean, eleicao: string) {
       // estado que já terminou de apurar não muda mais: não busca de novo
       const tem = atual.current[uf];
       if (tem?.eleicao === eleicao && concluida(tem)) continue;
-      fetch(`/api/municipios/${uf}?e=${eleicao}`)
+      fetch(urlMunicipiosUf(eleicao, uf))
         .then((r) => (r.ok ? r.json() : null))
         .then((d: MunUf | null) => {
           if (!vivo) return;

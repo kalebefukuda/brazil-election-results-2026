@@ -1,9 +1,13 @@
+"use client";
+
 import type { Resumo } from "@/lib/tse";
 import { UFS, cor } from "@/lib/brasil";
 import { projetar, type Dados } from "@/lib/calc";
 import { curto, pct, pp } from "@/lib/format";
+import { useTurno } from "@/lib/turno";
 
 export default function Projecao({ dados, br }: { dados: Dados; br: Resumo }) {
+  const { turno } = useTurno();
   const proj = projetar(dados, UFS);
   const lista = br.cands
     .map((c) => ({ ...c, final: proj.pcts[c.n] ?? 0, votosFinal: proj.votos[c.n] ?? 0 }))
@@ -18,7 +22,7 @@ export default function Projecao({ dados, br }: { dados: Dados; br: Resumo }) {
   else if (br.pst >= 30) confianca = "média";
 
   let veredito: string;
-  if (br.definido === "e") veredito = `Definido: ${br.cands[0].nome} eleito no 1º turno.`;
+  if (br.definido === "e") veredito = `Definido: ${br.cands[0].nome} eleito${turno === 1 ? " no 1º turno" : ""}.`;
   else if (br.definido === "s") veredito = `Definido: vai ter 2º turno entre ${br.cands[0].nome} e ${br.cands[1].nome}.`;
   else if (br.pst >= 99.9) veredito = "Apuração encerrada.";
   else if (primeiro.final > 50) veredito = `Nesse ritmo, ${primeiro.nome} venceria no 1º turno.`;

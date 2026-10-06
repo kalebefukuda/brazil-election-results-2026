@@ -7,6 +7,7 @@ import { baixarCargo, somaApuracao, type ResultadoCargo } from "@/lib/cargos";
 import { campo, corPartido, type Campo } from "@/lib/partidos";
 import { fmt, pct } from "@/lib/format";
 import { useAtualizacao } from "@/lib/auto";
+import { useTurno } from "@/lib/turno";
 import Hemiciclo, { type Cadeira } from "../Hemiciclo";
 import BarraCampos from "../BarraCampos";
 import Apurado from "../Apurado";
@@ -14,6 +15,7 @@ import Apurado from "../Apurado";
 const UFS_ESTADOS = Object.values(REGIOES).flat();
 
 export default function PaginaDeputados() {
+  const { ano } = useTurno();
   const [dados, setDados] = useState<Record<string, ResultadoCargo>>({});
   const [erro, setErro] = useState("");
 
@@ -67,6 +69,11 @@ export default function PaginaDeputados() {
   const posMeio = cont.esquerda + Math.floor(cont.centro / 2);
   cadeiras.splice(posMeio, 0, ...Array.from({ length: vazias }, () => ({ cor: "var(--line)", forte: true, titulo: "ainda não distribuída" })));
 
+  // os mais votados do país, juntando as 27 listas estaduais
+  const maisVotados = UFS_ESTADOS.flatMap((uf) => (dados[uf]?.cands ?? []).map((c) => ({ ...c, uf })))
+    .sort((x, y) => y.votos - x.votos)
+    .slice(0, 15);
+
   const carregou = Object.keys(dados).length > 0;
   const apur = somaApuracao(UFS_ESTADOS.map((uf) => dados[uf]));
 
@@ -74,7 +81,7 @@ export default function PaginaDeputados() {
     <main className="mx-auto max-w-[1240px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8">
       <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="kicker mb-2">Eleições 2026 · 1º turno</p>
+          <p className="kicker mb-2">Eleições {ano}</p>
           <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">
             Câmara dos Deputados
           </h1>
@@ -95,7 +102,9 @@ export default function PaginaDeputados() {
         </div>
       ) : (
         <div className="entra grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-          <section className="card p-5 sm:p-6" aria-labelledby="t-camara">
+          {/* coluna das cadeiras: fica parada enquanto a da direita rola */}
+          <div className="flex flex-col gap-4 sm:gap-5 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-88px)] lg:self-start">
+          <section className="card flex-none p-5 sm:p-6" aria-labelledby="t-camara">
             <div className="flex items-baseline justify-between gap-2">
               <h2 id="t-camara" className="titulo">
                 Cadeiras distribuídas
@@ -113,6 +122,43 @@ export default function PaginaDeputados() {
               classificar. Federação conta pelo primeiro partido.
             </p>
           </section>
+
+          <section className="card flex min-h-0 flex-col p-5 sm:p-6 lg:flex-1" aria-labelledby="t-maisvotados">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 id="t-maisvotados" className="titulo">
+                Mais votados do Brasil
+              </h2>
+              <span className="num text-[12px] text-ink3">{fmt(apur.pst)}% das seções</span>
+            </div>
+            <ol className="num rolagem mt-3 min-h-0 lg:-mr-2 lg:overflow-y-auto lg:pr-2">
+              {maisVotados.map((c, i) => (
+                <li key={`${c.uf}-${c.n}`}>
+                  <Link
+                    href={`/estados/${c.uf}?cargo=6`}
+                    className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-line2 py-2 last:border-0 hover:bg-card2"
+                  >
+                    <span className="text-right text-[12px] text-ink3">{i + 1}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[13.5px] font-semibold">{c.nome}</span>
+                      <span className="text-[11.5px]" style={{ color: corPartido(c.partido) }}>
+                        {c.partido} · {c.uf.toUpperCase()}
+                      </span>
+                    </span>
+                    <span className="flex flex-col items-end gap-0.5">
+                      <span className="text-[13px]">{fmt(c.votos)}</span>
+                      {c.eleito && (
+                        <span className="rounded border border-line px-1.5 text-[10.5px] font-semibold leading-[16px] text-ink2">
+                          eleito
+                        </span>
+                      )}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-3 text-[12px] text-ink3">Toque num nome, ou num estado ao lado, pra ver todos os candidatos dele.</p>
+          </section>
+          </div>
 
           <div className="flex flex-col gap-4 sm:gap-5">
             <section className="card p-5 sm:p-6" aria-labelledby="t-bancadas">

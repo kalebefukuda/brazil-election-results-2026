@@ -1,30 +1,28 @@
 import { UFS } from "@/lib/brasil";
-import { urlDados } from "@/lib/eleicao";
+import { ELEICOES, urlDados } from "@/lib/eleicao";
 
-// reserva: se o navegador não conseguir falar direto com o TSE, a Vercel busca e guarda por 15s (região gru1 no vercel.json)
-const ELEICOES: Record<string, string[]> = {
-  "6257": ["0001"], // presidente, 1º turno
-  "6258": ["0001"], // presidente, 2º turno
-  "6259": ["0003", "0005", "0006", "0007", "0008"], // governador, senador, deputados
-  "6260": ["0003"], // governador, 2º turno
-};
+// Reserva pro navegador que não consegue falar direto com o TSE: a Vercel (gru1) busca e guarda 15s.
+const PERMITIDOS = new Map<string, string[]>([
+  [ELEICOES[1].presidente, ["0001"]],
+  [ELEICOES[2].presidente, ["0001"]],
+  [ELEICOES[1].estadual, ["0003", "0005", "0006", "0007", "0008"]],
+  [ELEICOES[2].estadual, ["0003"]],
+]);
 
 export async function GET(req: Request, { params }: { params: Promise<{ uf: string }> }) {
   const { uf } = await params;
   const url = new URL(req.url);
-  const eleicao = url.searchParams.get("e") || "6257";
+  const eleicao = url.searchParams.get("e") || ELEICOES[1].presidente;
   const cargo = url.searchParams.get("c") || "0001";
 
-  if ((uf !== "br" && !UFS.includes(uf)) || !ELEICOES[eleicao]?.includes(cargo)) {
+  if ((uf !== "br" && !UFS.includes(uf)) || !PERMITIDOS.get(eleicao)?.includes(cargo)) {
     return Response.json({ erro: "Parâmetros inválidos" }, { status: 400 });
   }
 
-  const tse = urlDados(eleicao, uf, cargo);
   try {
-    const r = await fetch(tse, { next: { revalidate: 15 } });
+    const r = await fetch(urlDados(eleicao, uf, cargo), { next: { revalidate: 15 } });
     if (!r.ok) return Response.json({ erro: `TSE respondeu ${r.status}` }, { status: r.status === 404 ? 404 : 502 });
-    const json = await r.json();
-    return Response.json(json, {
+    return Response.json(await r.json(), {
       headers: { "Cache-Control": "public, s-maxage=15, stale-while-revalidate=30" },
     });
   } catch {

@@ -1,5 +1,8 @@
 // Eleição estadual: governador, senador e deputados, por UF (só governador tem 2º turno)
-import { codigos, ehPassada, urlDados } from "./eleicao";
+import { baixarArquivo, SemArquivo } from "./arquivo";
+import { codigos, definido } from "./eleicao";
+import { int, titulo } from "./texto";
+import type { ArquivoTSE } from "./tse-formato";
 import { descobrirTurno } from "./turno";
 
 export const CARGOS = {
@@ -52,17 +55,7 @@ export type ResultadoCargo = {
   grupos: Grupo[];
 };
 
-const int = (s?: string) => parseInt(s || "0", 10);
-
-function titulo(s: string) {
-  return s
-    .toLowerCase()
-    .replace(/(^|\s)\S/g, (c) => c.toUpperCase())
-    .replace(/\b(Da|De|Do|Dos|Das|E)\b/g, (m) => m.toLowerCase());
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function parseCargo(uf: string, cargo: CodCargo, j: any): ResultadoCargo {
+export function parseCargo(uf: string, cargo: CodCargo, j: ArquivoTSE): ResultadoCargo {
   const c = j.carg[0];
   const cands: CandCargo[] = [];
   const grupos: Grupo[] = [];
@@ -83,7 +76,7 @@ export function parseCargo(uf: string, cargo: CodCargo, j: any): ResultadoCargo 
         });
       }
     }
-    grupos.push({ nome: a.nm, sigla: a.com || a.par.map((p: { sg: string }) => p.sg).join("/"), votos: votosGrupo, vagas: int(a.vag) });
+    grupos.push({ nome: a.nm, sigla: a.com || a.par.map((p) => p.sg).join("/"), votos: votosGrupo, vagas: int(a.vag) });
   }
 
   const validos = int(j.v?.vv);
@@ -91,7 +84,7 @@ export function parseCargo(uf: string, cargo: CodCargo, j: any): ResultadoCargo 
   cands.sort((a, b) => b.votos - a.votos);
   grupos.sort((a, b) => b.votos - a.votos);
 
-  // o TSE avisa no campo "md" quando o resultado já não muda mais, antes de marcar o candidato
+  // durante a apuração o TSE avisa em "md" que o resultado não muda mais, antes de marcar o candidato
   const vagas = int(c.nv) || 1;
   if (cargo === "3" || cargo === "5") {
     if (j.md === "e") {
@@ -118,7 +111,10 @@ export function parseCargo(uf: string, cargo: CodCargo, j: any): ResultadoCargo 
     ts,
     esnt: int(j.e?.esnt),
     final: j.and === "f",
-    definido: j.md || "n",
+    definido: definido(
+      j.md,
+      cands.map((k) => ({ st: k.situacao })),
+    ),
     vagas,
     quociente: int(c.qe),
     validos,
@@ -127,46 +123,19 @@ export function parseCargo(uf: string, cargo: CodCargo, j: any): ResultadoCargo 
   };
 }
 
-export function urlCargo(uf: string, cargo: CodCargo, eleicao: string) {
-  return urlDados(eleicao, uf, CARGOS[cargo].arquivo);
-}
-
-let usarProxy = false;
-
-async function baixarDe(eleicao: string, uf: string, cargo: CodCargo): Promise<ResultadoCargo> {
-  // ano passado: arquivo estático do próprio site
-  if (ehPassada(eleicao)) {
-    const r = await fetch(urlCargo(uf, cargo, eleicao));
-    if (!r.ok) throw new Error("sem dados");
-    return parseCargo(uf, cargo, await r.json());
-  }
-  if (!usarProxy) {
-    try {
-      const r = await fetch(`${urlCargo(uf, cargo, eleicao)}?nocache=${Date.now()}`, { cache: "no-store" });
-      if (r.ok) return parseCargo(uf, cargo, await r.json());
-      if (r.status === 404) throw new Error("sem dados");
-    } catch (e) {
-      if (e instanceof Error && e.message === "sem dados") throw e;
-    }
-    usarProxy = true;
-  }
-  const r = await fetch(`/api/tse/${uf}?e=${eleicao}&c=${CARGOS[cargo].arquivo}`, { cache: "no-store" });
-  if (!r.ok) throw new Error(`${uf}: HTTP ${r.status}`);
-  return parseCargo(uf, cargo, await r.json());
-}
-
 export async function baixarCargo(uf: string, cargo: CodCargo): Promise<ResultadoCargo> {
-  // no 2º turno, só os estados que tiverem disputa de governador ganham arquivo novo; o resto segue no 1º
   const { ano, turno } = await descobrirTurno();
+  // no 2º turno só os estados com disputa de governador têm arquivo novo; os outros seguem no 1º
   if (cargo === "3" && turno === 2) {
     try {
-      return await baixarDe(codigos(ano, 2).estadual, uf, cargo);
-    } catch {}
+      return parseCargo(uf, cargo, await baixarArquivo(codigos(ano, 2).estadual, uf, CARGOS[cargo].arquivo));
+    } catch (e) {
+      if (!(e instanceof SemArquivo)) throw e;
+    }
   }
-  return baixarDe(codigos(ano, 1).estadual, uf, cargo);
+  return parseCargo(uf, cargo, await baixarArquivo(codigos(ano, 1).estadual, uf, CARGOS[cargo].arquivo));
 }
 
-// texto curto da situação de quem tá na frente
 export function situacaoGovernador(r: ResultadoCargo) {
   const [a] = r.cands;
   if (!a) return "";
@@ -175,7 +144,6 @@ export function situacaoGovernador(r: ResultadoCargo) {
   return a.pct > 50 ? "tendência de vitória no 1º turno" : "tendência de 2º turno";
 }
 
-// soma a apuração de vários estados (pra mostrar o total do país nas páginas de Senado/Deputados)
 export function somaApuracao(lista: (ResultadoCargo | undefined)[]) {
   let st = 0;
   let ts = 0;

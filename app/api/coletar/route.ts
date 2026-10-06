@@ -1,7 +1,7 @@
-import { coletar } from "@/lib/coletor";
-import { autorizado } from "@/lib/supabase";
+import { coletar } from "@/lib/servidor/coletor";
+import { autorizado } from "@/lib/servidor/supabase";
 
-// chamado pelo pg_cron do Supabase a cada minuto; ?seco=1 monta tudo sem gravar (pra testar)
+// pg_cron do Supabase chama a cada minuto; ?seco=1 (só em dev) monta tudo sem gravar
 export const maxDuration = 60;
 
 export async function GET(req: Request) {
@@ -12,6 +12,7 @@ export async function GET(req: Request) {
   try {
     return Response.json(await coletar({ seco }), { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
-    return Response.json({ erro: e instanceof Error ? e.message : "falhou" }, { status: 502 });
+    console.error("coletar:", e);
+    return Response.json({ erro: "coleta falhou" }, { status: 502 });
   }
 }

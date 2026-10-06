@@ -22,7 +22,8 @@ export function codigos(ano: Ano, turno: Turno) {
 // eleição de ano passado → ano (os arquivos dela ficam no próprio site, em /historico)
 const PASSADAS: Record<string, Ano> = {};
 for (const ano of ANOS)
-  if (ano !== ANO_ATUAL) for (const t of [1, 2] as const) for (const e of Object.values(CODIGOS[ano][t])) PASSADAS[e] = ano;
+  if (ano !== ANO_ATUAL)
+    for (const t of [1, 2] as const) for (const e of Object.values(CODIGOS[ano][t])) PASSADAS[e] = ano;
 
 export const ehPassada = (eleicao: string) => eleicao in PASSADAS;
 
@@ -41,7 +42,6 @@ export function urlMunicipiosUf(eleicao: string, uf: string) {
   return `/api/municipios/${uf}?e=${eleicao}`;
 }
 
-// arquivo de um município: fica na pasta da UF, com o código TSE do município colado na sigla
 export function urlMunicipio(eleicao: string, uf: string, codTse: string, cargo: string) {
   return `${TSE_BASE}/${eleicao}/dados/${uf}/${uf}${codTse}-c${cargo}-e00${eleicao}-u.json`;
 }

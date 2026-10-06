@@ -1,10 +1,32 @@
 export const NOMES: Record<string, string> = {
-  ac: "Acre", al: "Alagoas", ap: "Amapá", am: "Amazonas", ba: "Bahia", ce: "Ceará",
-  df: "Distrito Federal", es: "Espírito Santo", go: "Goiás", ma: "Maranhão", mt: "Mato Grosso",
-  ms: "Mato Grosso do Sul", mg: "Minas Gerais", pa: "Pará", pb: "Paraíba", pr: "Paraná",
-  pe: "Pernambuco", pi: "Piauí", rj: "Rio de Janeiro", rn: "Rio Grande do Norte",
-  rs: "Rio Grande do Sul", ro: "Rondônia", rr: "Roraima", sc: "Santa Catarina",
-  sp: "São Paulo", se: "Sergipe", to: "Tocantins", zz: "Exterior",
+  ac: "Acre",
+  al: "Alagoas",
+  ap: "Amapá",
+  am: "Amazonas",
+  ba: "Bahia",
+  ce: "Ceará",
+  df: "Distrito Federal",
+  es: "Espírito Santo",
+  go: "Goiás",
+  ma: "Maranhão",
+  mt: "Mato Grosso",
+  ms: "Mato Grosso do Sul",
+  mg: "Minas Gerais",
+  pa: "Pará",
+  pb: "Paraíba",
+  pr: "Paraná",
+  pe: "Pernambuco",
+  pi: "Piauí",
+  rj: "Rio de Janeiro",
+  rn: "Rio Grande do Norte",
+  rs: "Rio Grande do Sul",
+  ro: "Rondônia",
+  rr: "Roraima",
+  sc: "Santa Catarina",
+  sp: "São Paulo",
+  se: "Sergipe",
+  to: "Tocantins",
+  zz: "Exterior",
 };
 
 export const REGIOES: Record<string, string[]> = {
@@ -27,7 +49,6 @@ export const CORES: Record<string, string> = {
   "70": "var(--c70)",
   "55": "var(--c55)",
   "14": "var(--c14)",
-  // 2022 e 2018
   "17": "var(--c22)", // Bolsonaro em 2018 (PSL)
   "12": "var(--c70)", // Ciro (PDT)
   "15": "var(--c55)", // Simone Tebet (MDB)
@@ -41,10 +62,33 @@ export function cor(n?: string | null) {
 
 // código IBGE da UF (2 primeiros dígitos do código do município) → sigla
 const UF_IBGE: Record<string, string> = {
-  "11": "ro", "12": "ac", "13": "am", "14": "rr", "15": "pa", "16": "ap", "17": "to",
-  "21": "ma", "22": "pi", "23": "ce", "24": "rn", "25": "pb", "26": "pe", "27": "al", "28": "se", "29": "ba",
-  "31": "mg", "32": "es", "33": "rj", "35": "sp", "41": "pr", "42": "sc", "43": "rs",
-  "50": "ms", "51": "mt", "52": "go", "53": "df",
+  "11": "ro",
+  "12": "ac",
+  "13": "am",
+  "14": "rr",
+  "15": "pa",
+  "16": "ap",
+  "17": "to",
+  "21": "ma",
+  "22": "pi",
+  "23": "ce",
+  "24": "rn",
+  "25": "pb",
+  "26": "pe",
+  "27": "al",
+  "28": "se",
+  "29": "ba",
+  "31": "mg",
+  "32": "es",
+  "33": "rj",
+  "35": "sp",
+  "41": "pr",
+  "42": "sc",
+  "43": "rs",
+  "50": "ms",
+  "51": "mt",
+  "52": "go",
+  "53": "df",
 };
 
 export function ufDoMunicipio(cdi: string) {

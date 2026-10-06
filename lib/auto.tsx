@@ -41,13 +41,12 @@ export function AutoProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // a página registra a função dela e já carrega na hora
   const registrar = useCallback(
     (fn: (() => Promise<void>) | null) => {
       fnRef.current = fn;
       if (fn) agora();
     },
-    [agora]
+    [agora],
   );
 
   useEffect(() => {
@@ -98,7 +97,6 @@ export function useAuto() {
   return c;
 }
 
-// usado pelas páginas: registra a função de atualizar enquanto a página estiver aberta
 export function useAtualizacao(fn: () => Promise<void>) {
   const { registrar } = useAuto();
   useEffect(() => {

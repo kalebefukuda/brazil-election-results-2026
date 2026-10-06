@@ -42,9 +42,7 @@ export function useOnline() {
           body: JSON.stringify({ p_id: id }),
         });
         if (r.ok && !parado) setN(await r.json());
-      } catch {
-        // sem contador, sem drama
-      }
+      } catch {}
     }
 
     ping();

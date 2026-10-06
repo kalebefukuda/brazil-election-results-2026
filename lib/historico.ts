@@ -1,9 +1,12 @@
-// Formato do /api/historico, usado pela linha do tempo, pelo gráfico e pelo feed.
-// Cada foto é um array enxuto: os campos fixos de CAMPOS e depois os votos de cada candidato na ordem de `cands`.
+// Fotos da apuração gravadas pelo coletor e servidas por /api/historico (linha do tempo, gráfico e feed).
 import type { Candidato, Resumo } from "./tse";
 
-export const CAMPOS = ["st", "ts", "vv", "cp", "ab", "vb", "vn", "tv", "esnt"] as const;
-const N = CAMPOS.length;
+// st/ts seções, vv válidos, cp comparecimento, ab abstenção, vb brancos, vn nulos, tv total, esnt eleitores a apurar
+const CAMPOS = ["st", "ts", "vv", "cp", "ab", "vb", "vn", "tv", "esnt"] as const;
+export type Foto = Record<(typeof CAMPOS)[number], number> & { c: Record<string, number>; md?: string };
+
+// na resposta da API cada foto vira array: os CAMPOS e, a partir de N_CAMPOS, os votos de cada um de `cands`
+export const N_CAMPOS = CAMPOS.length;
 
 export type EventoFeed = {
   momento: string;
@@ -19,13 +22,16 @@ export type Historico = {
   eventos: EventoFeed[];
 };
 
-export function enxugar(f: Record<(typeof CAMPOS)[number], number> & { c: Record<string, number> }, cands: string[]) {
+export function enxugar(f: Foto, cands: string[]) {
   return [...CAMPOS.map((k) => f[k]), ...cands.map((n) => f.c[n] ?? 0)];
 }
 
-// horário de Brasília de um momento ISO: "21h05"
 export function horaBrasilia(momento: string) {
-  const s = new Date(momento).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+  const s = new Date(momento).toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   return s.replace(":", "h");
 }
 
@@ -34,8 +40,15 @@ export function fotoParaResumo(uf: string, v: number[], cands: string[], momento
   const [st, ts, vv, cp, ab, vb, vn, tv, esnt] = v;
   const lista: Candidato[] = cands.map((n, i) => {
     const base = vivo.cands.find((c) => c.n === n);
-    const votos = v[N + i] ?? 0;
-    return { n, sq: base?.sq ?? "", nome: base?.nome ?? n, partido: base?.partido ?? "", votos, pct: vv ? (votos / vv) * 100 : 0 };
+    const votos = v[N_CAMPOS + i] ?? 0;
+    return {
+      n,
+      sq: base?.sq ?? "",
+      nome: base?.nome ?? n,
+      partido: base?.partido ?? "",
+      votos,
+      pct: vv ? (votos / vv) * 100 : 0,
+    };
   });
   lista.sort((a, b) => b.votos - a.votos);
   const d = new Date(momento);

@@ -1,12 +1,18 @@
-// SÓ PRA DESENVOLVIMENTO LOCAL (sem Supabase): inventa uma apuração de 0% a 100% a partir do resultado
-// final real, pra dar pra montar a linha do tempo, o gráfico e o feed. Nunca é usado em produção.
-import { REGIAO_DE } from "./brasil";
-import { baixarFotos, type Foto } from "./coletor";
-import { enxugar, type EventoFeed, type Historico } from "./historico";
-import { freio } from "./municipios";
+// Só em desenvolvimento, sem Supabase: simula a apuração de 0% a 100% a partir do resultado final real.
+import { REGIAO_DE } from "../brasil";
+import { enxugar, type EventoFeed, type Foto, type Historico } from "../historico";
+import { baixarFotos } from "./coletor";
+import { freio } from "./tse";
 
-// minutos até cada região começar a aparecer: Sul/Sudeste saem na frente, Norte e exterior por último
-const ATRASO: Record<string, number> = { Sul: 0, Sudeste: 5, "Centro-Oeste": 10, Nordeste: 20, Norte: 35, Exterior: 60 };
+// minutos até cada região começar a aparecer
+const ATRASO: Record<string, number> = {
+  Sul: 0,
+  Sudeste: 5,
+  "Centro-Oeste": 10,
+  Nordeste: 20,
+  Norte: 35,
+  Exterior: 60,
+};
 const QUADROS = 84; // de 5 em 5 min, das 17h à meia-noite
 
 let guardado: Historico | null = null;

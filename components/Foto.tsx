@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 
-// foto oficial do candidato (divulgação do TSE); se não carregar, mostra as iniciais
+// foto oficial do candidato (divulgação do TSE) ou, em anos passados, o caminho de uma foto do próprio site
+// (Wikimedia Commons, créditos em /creditos); se não carregar, mostra as iniciais
 export default function Foto({ sq, nome, cor, tam = 40 }: { sq?: string; nome: string; cor: string; tam?: number }) {
-  const [erro, setErro] = useState(false);
+  // guarda QUAL foto falhou: trocando de candidato (ou de ano), tenta de novo
+  const [falhou, setFalhou] = useState<string | null>(null);
+  const erro = falhou === sq;
   const iniciais = nome
     .split(" ")
     .filter((p) => p.length > 2)
@@ -20,13 +23,13 @@ export default function Foto({ sq, nome, cor, tam = 40 }: { sq?: string; nome: s
       {sq && !erro ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={`https://resultados.tse.jus.br/oficial/ele2026/6257/fotos/br/${sq}.jpeg`}
+          src={sq.startsWith("/") ? sq : `https://resultados.tse.jus.br/oficial/ele2026/6257/fotos/br/${sq}.jpeg`}
           alt={nome}
           width={tam}
           height={tam}
           loading="lazy"
           className="h-full w-full object-cover object-top"
-          onError={() => setErro(true)}
+          onError={() => setFalhou(sq ?? null)}
         />
       ) : (
         iniciais

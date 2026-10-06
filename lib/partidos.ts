@@ -38,10 +38,33 @@ const SUCESSOR: Record<string, string> = {
   PPL: "PC DO B",
 };
 
-// federação vem como "PT/PC do B/PV" ou "PRD / SOLIDARIEDADE": usa o primeiro partido
+// federação ("PC do B/PT/PV", "PCDOB / PT / PV") é pintada e classificada pelo maior partido dela
+const MAIORES = [
+  "PL",
+  "PT",
+  "UNIÃO",
+  "PP",
+  "PSD",
+  "MDB",
+  "REPUBLICANOS",
+  "PSDB",
+  "PSB",
+  "PSOL",
+  "PDT",
+  "PODE",
+  "SOLIDARIEDADE",
+];
+const peso = (p: string) => (MAIORES.includes(p) ? MAIORES.indexOf(p) : MAIORES.length);
+
 export function partidoPrincipal(sigla: string) {
-  const p = sigla.split("/")[0].trim().toUpperCase();
-  return SUCESSOR[p] ?? p;
+  const partes = sigla.split("/").map((p) => {
+    const x = p
+      .trim()
+      .toUpperCase()
+      .replace(/^PCDOB$/, "PC DO B");
+    return SUCESSOR[x] ?? x;
+  });
+  return partes.sort((a, b) => peso(a) - peso(b))[0];
 }
 
 export function corPartido(sigla: string) {
@@ -50,7 +73,21 @@ export function corPartido(sigla: string) {
 
 // agrupamento aproximado por campo político, no estilo do que a imprensa costuma usar
 const ESQUERDA = ["PT", "PSOL", "PC DO B", "PCDOB", "PV", "REDE", "PSB", "PDT", "UP", "PCB", "PSTU", "PCO"];
-const CENTRO = ["MDB", "PSD", "PSDB", "CIDADANIA", "SOLIDARIEDADE", "AVANTE", "PODE", "PRD", "PMB", "AGIR", "PROS", "PMN", "PTC"];
+const CENTRO = [
+  "MDB",
+  "PSD",
+  "PSDB",
+  "CIDADANIA",
+  "SOLIDARIEDADE",
+  "AVANTE",
+  "PODE",
+  "PRD",
+  "PMB",
+  "AGIR",
+  "PROS",
+  "PMN",
+  "PTC",
+];
 
 export type Campo = "esquerda" | "centro" | "direita";
 

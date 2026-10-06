@@ -1,9 +1,12 @@
 import { UFS } from "@/lib/brasil";
+import { urlDados } from "@/lib/eleicao";
 
 // reserva: se o navegador não conseguir falar direto com o TSE, a Vercel busca e guarda por 15s (região gru1 no vercel.json)
 const ELEICOES: Record<string, string[]> = {
-  "6257": ["0001"], // presidente
+  "6257": ["0001"], // presidente, 1º turno
+  "6258": ["0001"], // presidente, 2º turno
   "6259": ["0003", "0005", "0006", "0007", "0008"], // governador, senador, deputados
+  "6260": ["0003"], // governador, 2º turno
 };
 
 export async function GET(req: Request, { params }: { params: Promise<{ uf: string }> }) {
@@ -16,7 +19,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ uf: stri
     return Response.json({ erro: "Parâmetros inválidos" }, { status: 400 });
   }
 
-  const tse = `https://resultados.tse.jus.br/oficial/ele2026/${eleicao}/dados/${uf}/${uf}-c${cargo}-e00${eleicao}-u.json`;
+  const tse = urlDados(eleicao, uf, cargo);
   try {
     const r = await fetch(tse, { next: { revalidate: 15 } });
     if (!r.ok) return Response.json({ erro: `TSE respondeu ${r.status}` }, { status: r.status === 404 ? 404 : 502 });

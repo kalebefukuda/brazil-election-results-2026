@@ -1,8 +1,10 @@
-// Arquivos públicos de divulgação do TSE — eleição 6257 (Presidente, 1º turno 2026), cargo 0001
-const TSE = "https://resultados.tse.jus.br/oficial/ele2026/6257/dados";
+// Arquivos públicos de divulgação do TSE — Presidente (cargo 0001), no turno que estiver valendo
+import { ELEICOES, definido, urlDados } from "./eleicao";
+import { turnoAtual } from "./turno";
 
 export type Candidato = {
   n: string;
+  st?: string; // situação do TSE depois de totalizar: "Eleito", "2º turno", "Não eleito"
   sq: string; // sequencial do TSE, usado na foto
   nome: string;
   partido: string;
@@ -44,7 +46,7 @@ export function parse(uf: string, j: any): Resumo {
   for (const a of j.carg[0].agr)
     for (const p of a.par)
       for (const k of p.cand)
-        cands.push({ n: k.n, sq: k.sqcand, nome: titulo(k.nmu), partido: p.sg, votos: int(k.vap), pct: 0 });
+        cands.push({ n: k.n, sq: k.sqcand, nome: titulo(k.nmu), partido: p.sg, votos: int(k.vap), pct: 0, st: k.st || "" });
 
   const validos = int(j.v.vv);
   for (const c of cands) c.pct = validos ? (c.votos / validos) * 100 : 0;
@@ -59,7 +61,7 @@ export function parse(uf: string, j: any): Resumo {
     ts,
     st,
     pst: ts ? (st / ts) * 100 : 0,
-    definido: j.md || "n",
+    definido: definido(j.md, cands),
     te: int(j.e.te),
     comp: int(j.e.c),
     abst: int(j.e.a),
@@ -72,24 +74,25 @@ export function parse(uf: string, j: any): Resumo {
   };
 }
 
-export function urlTSE(uf: string) {
-  return `${TSE}/${uf}/${uf}-c0001-e006257-u.json`;
+export function urlTSE(uf: string, eleicao: string = ELEICOES[turnoAtual()].presidente) {
+  return urlDados(eleicao, uf, "0001");
 }
 
 // tenta direto no TSE (navegador do visitante); se falhar, usa a rota /api como reserva
 let usarProxy = false;
 
 export async function baixar(uf: string): Promise<Resumo> {
+  const eleicao = ELEICOES[turnoAtual()].presidente;
   if (!usarProxy) {
     try {
-      const r = await fetch(`${urlTSE(uf)}?nocache=${Date.now()}`, { cache: "no-store" });
+      const r = await fetch(`${urlTSE(uf, eleicao)}?nocache=${Date.now()}`, { cache: "no-store" });
       if (r.ok) return parse(uf, await r.json());
     } catch {
       // CORS ou rede: cai pro proxy
     }
     usarProxy = true;
   }
-  const r = await fetch(`/api/tse/${uf}`, { cache: "no-store" });
+  const r = await fetch(`/api/tse/${uf}?e=${eleicao}&c=0001`, { cache: "no-store" });
   if (!r.ok) throw new Error(`${uf}: HTTP ${r.status}`);
   return parse(uf, await r.json());
 }

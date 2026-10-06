@@ -1,5 +1,6 @@
-// Eleição estadual (6259): governador, senador e deputados, por UF
-export const ELEICAO_ESTADUAL = "6259";
+// Eleição estadual: governador, senador e deputados, por UF (só governador tem 2º turno)
+import { ELEICOES, urlDados } from "./eleicao";
+import { descobrirTurno } from "./turno";
 
 export const CARGOS = {
   "3": { nome: "Governador", curto: "Governador", arquivo: "0003" },
@@ -126,18 +127,16 @@ export function parseCargo(uf: string, cargo: CodCargo, j: any): ResultadoCargo 
   };
 }
 
-const TSE = `https://resultados.tse.jus.br/oficial/ele2026/${ELEICAO_ESTADUAL}/dados`;
-
-export function urlCargo(uf: string, cargo: CodCargo) {
-  return `${TSE}/${uf}/${uf}-c${CARGOS[cargo].arquivo}-e00${ELEICAO_ESTADUAL}-u.json`;
+export function urlCargo(uf: string, cargo: CodCargo, eleicao: string = ELEICOES[1].estadual) {
+  return urlDados(eleicao, uf, CARGOS[cargo].arquivo);
 }
 
 let usarProxy = false;
 
-export async function baixarCargo(uf: string, cargo: CodCargo): Promise<ResultadoCargo> {
+async function baixarDe(eleicao: string, uf: string, cargo: CodCargo): Promise<ResultadoCargo> {
   if (!usarProxy) {
     try {
-      const r = await fetch(`${urlCargo(uf, cargo)}?nocache=${Date.now()}`, { cache: "no-store" });
+      const r = await fetch(`${urlCargo(uf, cargo, eleicao)}?nocache=${Date.now()}`, { cache: "no-store" });
       if (r.ok) return parseCargo(uf, cargo, await r.json());
       if (r.status === 404) throw new Error("sem dados");
     } catch (e) {
@@ -145,9 +144,19 @@ export async function baixarCargo(uf: string, cargo: CodCargo): Promise<Resultad
     }
     usarProxy = true;
   }
-  const r = await fetch(`/api/tse/${uf}?e=${ELEICAO_ESTADUAL}&c=${CARGOS[cargo].arquivo}`, { cache: "no-store" });
+  const r = await fetch(`/api/tse/${uf}?e=${eleicao}&c=${CARGOS[cargo].arquivo}`, { cache: "no-store" });
   if (!r.ok) throw new Error(`${uf}: HTTP ${r.status}`);
   return parseCargo(uf, cargo, await r.json());
+}
+
+export async function baixarCargo(uf: string, cargo: CodCargo): Promise<ResultadoCargo> {
+  // no 2º turno, só os estados que tiverem disputa de governador ganham arquivo novo; o resto segue no 1º
+  if (cargo === "3" && (await descobrirTurno()) === 2) {
+    try {
+      return await baixarDe(ELEICOES[2].estadual, uf, cargo);
+    } catch {}
+  }
+  return baixarDe(ELEICOES[1].estadual, uf, cargo);
 }
 
 // texto curto da situação de quem tá na frente

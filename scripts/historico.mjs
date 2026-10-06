@@ -8,7 +8,7 @@
 import { spawn, execFileSync } from "node:child_process";
 import { createInterface } from "node:readline";
 import { existsSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 
 const ANOS = [2022, 2018];
 const CACHE = ".cache/tse";
@@ -21,7 +21,9 @@ async function baixar(nome, url) {
   const destino = `${CACHE}/${nome}`;
   if (existsSync(destino)) return destino;
   await mkdir(CACHE, { recursive: true });
-  execFileSync("curl", ["-sSf", "-o", destino, url]);
+  // baixa num temporário: um download interrompido não deixa zip quebrado no cache
+  execFileSync("curl", ["-sSf", "-o", `${destino}.parcial`, url]);
+  await rename(`${destino}.parcial`, destino);
   return destino;
 }
 
@@ -30,13 +32,19 @@ const membros = (zip) =>
     .split("\n")
     .filter((n) => n.endsWith(".csv"));
 
-// lê um CSV de dentro do zip linha a linha (os do TSE são latin1, separados por ;)
+// campos entre aspas podem ter ";" dentro
+const campos = (linha) => [...linha.matchAll(/"([^"]*)"|([^;]+)|(?<=;|^)(?=;|$)/g)].map((m) => m[1] ?? m[2] ?? "");
+
+// CSV de dentro do zip, linha a linha (latin1, separado por ;); falha se o unzip falhar no meio
 async function* linhas(zip, membro) {
   const p = spawn("unzip", ["-p", zip, membro]);
+  const saida = new Promise((ok, erro) =>
+    p.on("close", (codigo) => (codigo === 0 ? ok() : erro(new Error(`unzip ${membro}: código ${codigo}`)))),
+  );
   p.stdout.setEncoding("latin1");
   let cab = null;
   for await (const linha of createInterface({ input: p.stdout, crlfDelay: Infinity })) {
-    const v = linha.split(";").map((x) => (x.startsWith('"') ? x.slice(1, -1) : x));
+    const v = campos(linha);
     if (!cab) {
       cab = v;
       continue;
@@ -45,6 +53,7 @@ async function* linhas(zip, membro) {
     cab.forEach((k, i) => (o[k] = v[i]));
     yield o;
   }
+  await saida;
 }
 
 const n = (s) => parseInt(s || "0", 10) || 0;
@@ -60,7 +69,6 @@ function situacao(ds) {
   return "";
 }
 
-// ---- comparecimento, seções, brancos e nulos -------------------------------------------------------
 function novoDet() {
   return { te: 0, ts: 0, c: 0, a: 0, vv: 0, vb: 0, vn: 0, dt: "", ht: "" };
 }
@@ -82,8 +90,6 @@ function somarDet(d, r) {
   }
 }
 
-// ---- formato da divulgação do TSE ------------------------------------------------------------------
-// fotos dos candidatos a presidente baixadas antes por scripts/fotos-historico.mjs
 const fotos = new Map();
 let anoAtual = 0;
 
@@ -141,7 +147,13 @@ function agrupar(cands, proporcional) {
     const chave = proporcional && k.federacao ? k.federacao : k.partido;
     let g = grupos.get(chave);
     if (!g) {
-      g = { chave, nome: proporcional && k.federacao ? k.nomeFederacao : k.nomePartido, sigla: chave, vagas: 0, partidos: new Map() };
+      g = {
+        chave,
+        nome: proporcional && k.federacao ? k.nomeFederacao : k.nomePartido,
+        sigla: chave,
+        vagas: 0,
+        partidos: new Map(),
+      };
       grupos.set(chave, g);
     }
     let p = g.partidos.get(k.partido);
@@ -170,7 +182,10 @@ async function salvar(caminho, obj) {
 // TSE (UF + código do município) → IBGE, pela lista de municípios da divulgação de 2026.
 // A chave precisa da UF: códigos de cidades do exterior (zz) repetem os de outros estados.
 async function tseParaIbge() {
-  const destino = await baixar("mun-2026.json", "https://resultados.tse.jus.br/oficial/ele2026/6257/config/mun-e006257-cm.json");
+  const destino = await baixar(
+    "mun-2026.json",
+    "https://resultados.tse.jus.br/oficial/ele2026/6257/config/mun-e006257-cm.json",
+  );
   const j = JSON.parse(await readFile(destino, "utf8"));
   const m = new Map();
   for (const a of j.abr) for (const mu of a.mu) m.set(`${a.cd}|${mu.cd}`, { cdi: mu.cdi, nm: mu.nm });
@@ -190,7 +205,6 @@ async function processarAno(ano, ibge) {
   const cand = await baixar(`cand_${ano}.zip`, `${CDN}/votacao_candidato_munzona/votacao_candidato_munzona_${ano}.zip`);
   const codigos = {}; // turno → { presidente, estadual }
 
-  // ---- detalhe: presidente (arquivo BR) e cargos estaduais (arquivos por UF) ----
   const detPres = new Map(); // `${turno}|${uf}` → det  (uf "br" = Brasil)
   const detPresMun = new Map(); // `${turno}|${uf}|${mun}` → det
   const detEst = new Map(); // `${turno}|${cargo}|${uf}` → det
@@ -220,11 +234,11 @@ async function processarAno(ano, ibge) {
     }
   }
 
-  // ---- candidatos ----
   const presUf = new Map(); // `${turno}|${uf}` → Map(nr → cand)
   const presMun = new Map(); // `${turno}|${uf}|${mun}` → Map(nr → votos)
   const est = new Map(); // `${turno}|${cargo}|${uf}` → Map(sq → cand)
-  const colVotos = (r) => (r.QT_VOTOS_NOMINAIS_VALIDOS !== undefined ? r.QT_VOTOS_NOMINAIS_VALIDOS : r.QT_VOTOS_NOMINAIS);
+  const colVotos = (r) =>
+    r.QT_VOTOS_NOMINAIS_VALIDOS !== undefined ? r.QT_VOTOS_NOMINAIS_VALIDOS : r.QT_VOTOS_NOMINAIS;
 
   for (const membro of membros(cand)) {
     if (/_BRASIL\.csv$/.test(membro)) continue;
@@ -267,13 +281,15 @@ async function processarAno(ano, ibge) {
     }
   }
 
-  // ---- escreve: presidente ----
   for (const [chave, mapa] of presUf) {
     const [turno, uf] = chave.split("|");
     const ele = codigos[turno].presidente;
     const cands = [...mapa.values()].filter((k) => k.votos > 0 || k.st.startsWith("Eleito"));
     const d = detPres.get(chave) ?? novoDet();
-    await salvar(`${SAIDA}/${ano}/${ele}/${uf}-c0001.json`, arquivo(ele, turno, uf, d, cargoJson(1, 1, agrupar(cands, false))));
+    await salvar(
+      `${SAIDA}/${ano}/${ele}/${uf}-c0001.json`,
+      arquivo(ele, turno, uf, d, cargoJson(1, 1, agrupar(cands, false))),
+    );
   }
 
   // municípios do presidente, no formato do coletor (lib/municipios.ts → MunUf)
@@ -296,7 +312,6 @@ async function processarAno(ano, ibge) {
     for (const [uf, dados] of Object.entries(porUf)) await salvar(`${SAIDA}/${ano}/${ele}/mun/${uf}.json`, dados);
   }
 
-  // ---- escreve: governador, senador e deputados ----
   votosNacionais = new Map();
   for (const [chave, mapa] of est) {
     if (chave.split("|")[1] !== "6") continue;
@@ -317,7 +332,8 @@ async function processarAno(ano, ibge) {
 }
 
 if (existsSync(`${SAIDA}/fotos/creditos.json`)) {
-  for (const c of JSON.parse(await readFile(`${SAIDA}/fotos/creditos.json`, "utf8"))) fotos.set(`${c.ano}|${c.numero}`, c.foto);
+  for (const c of JSON.parse(await readFile(`${SAIDA}/fotos/creditos.json`, "utf8")))
+    fotos.set(`${c.ano}|${c.numero}`, c.foto);
 }
 const ibge = await tseParaIbge();
 const resumo = {};

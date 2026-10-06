@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { ELEICOES, TSE_BASE } from "@/lib/eleicao";
 
-// foto oficial do candidato (divulgação do TSE) ou, em anos passados, o caminho de uma foto do próprio site
-// (Wikimedia Commons, créditos em /creditos); se não carregar, mostra as iniciais
+// sq: sequencial do TSE ou, em anos passados, caminho de uma foto do próprio site (ver /creditos)
 export default function Foto({ sq, nome, cor, tam = 40 }: { sq?: string; nome: string; cor: string; tam?: number }) {
   // guarda QUAL foto falhou: trocando de candidato (ou de ano), tenta de novo
   const [falhou, setFalhou] = useState<string | null>(null);
@@ -23,7 +23,7 @@ export default function Foto({ sq, nome, cor, tam = 40 }: { sq?: string; nome: s
       {sq && !erro ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={sq.startsWith("/") ? sq : `https://resultados.tse.jus.br/oficial/ele2026/6257/fotos/br/${sq}.jpeg`}
+          src={sq.startsWith("/") ? sq : `${TSE_BASE}/${ELEICOES[1].presidente}/fotos/br/${sq}.jpeg`}
           alt={nome}
           width={tam}
           height={tam}

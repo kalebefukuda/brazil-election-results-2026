@@ -1,4 +1,3 @@
-// ícones de traço simples (estilo lucide), herdam a cor do texto
 type P = { className?: string };
 
 const base = {

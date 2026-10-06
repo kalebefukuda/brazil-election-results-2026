@@ -106,7 +106,12 @@ export default function Tabela({ dados, br, a, b, selecionado, onSelecionar }: P
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por região">
           {["Todas", ...Object.keys(REGIOES), "Exterior"].map((r) => (
-            <button key={r} className="btn !min-h-[32px] !text-[12px]" aria-pressed={regiao === r} onClick={() => setRegiao(r)}>
+            <button
+              key={r}
+              className="btn !min-h-[32px] !text-[12px]"
+              aria-pressed={regiao === r}
+              onClick={() => setRegiao(r)}
+            >
               {r}
             </button>
           ))}
@@ -140,7 +145,9 @@ export default function Tabela({ dados, br, a, b, selecionado, onSelecionar }: P
                 onClick={() => onSelecionar(r.uf)}
                 className={`group cursor-pointer ${r.uf === selecionado ? "bg-card2" : ""}`}
               >
-                <td className={`sticky left-0 z-10 whitespace-nowrap border-b border-line2 py-2.5 ${r.uf === selecionado ? "bg-card2" : "bg-card"} pl-5 pr-3 group-hover:bg-card2 sm:pl-6`}>
+                <td
+                  className={`sticky left-0 z-10 whitespace-nowrap border-b border-line2 py-2.5 ${r.uf === selecionado ? "bg-card2" : "bg-card"} pl-5 pr-3 group-hover:bg-card2 sm:pl-6`}
+                >
                   <b>{r.uf.toUpperCase()}</b> <span className="hidden text-ink2 sm:inline">{r.nome}</span>
                 </td>
                 <Td bold>{pct(r.peso, 1)}</Td>

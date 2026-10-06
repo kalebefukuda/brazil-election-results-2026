@@ -8,7 +8,6 @@ import LogoFukuda from "./LogoFukuda";
 
 const link = "underline underline-offset-2 hover:text-ink";
 
-// rodapé num card só: quem fez à esquerda, fontes à direita, aviso embaixo
 export default function Rodape() {
   const path = usePathname();
   return (
@@ -16,7 +15,13 @@ export default function Rodape() {
       <footer className="card overflow-hidden">
         <div className="grid md:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           <section aria-labelledby="t-fukuda" className="flex flex-col gap-5 p-6 sm:flex-row sm:items-start sm:p-8">
-            <a href={FUKUDA.site} target="_blank" rel="noopener noreferrer" className="flex-none text-ink" aria-label="FukudaDigital">
+            <a
+              href={FUKUDA.site}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-none text-ink"
+              aria-label="FukudaDigital"
+            >
               <LogoFukuda className="h-12 w-auto" />
             </a>
             <div className="min-w-0">
@@ -36,7 +41,12 @@ export default function Rodape() {
                 >
                   Chamar no WhatsApp
                 </a>
-                <a href={FUKUDA.site} target="_blank" rel="noopener noreferrer" className="btn inline-flex items-center">
+                <a
+                  href={FUKUDA.site}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn inline-flex items-center"
+                >
                   fukudadigital.com.br
                 </a>
                 <a href={`mailto:${FUKUDA.email}`} className="btn inline-flex items-center">
@@ -70,7 +80,12 @@ export default function Rodape() {
               </li>
               <li>
                 <b className="font-semibold text-ink2">Mapa:</b>{" "}
-                <a className={link} href="https://servicodados.ibge.gov.br/api/docs/malhas" target="_blank" rel="noopener noreferrer">
+                <a
+                  className={link}
+                  href="https://servicodados.ibge.gov.br/api/docs/malhas"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   malha municipal do IBGE
                 </a>
                 .

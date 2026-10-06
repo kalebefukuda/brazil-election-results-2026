@@ -1,7 +1,6 @@
 import { FUKUDA } from "@/lib/fukuda";
 import LogoFukuda from "./LogoFukuda";
 
-// faixa fina acima do menu: discreta, mas no lugar que todo mundo olha
 export default function Faixa() {
   return (
     <a

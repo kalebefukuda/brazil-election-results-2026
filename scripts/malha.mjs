@@ -18,10 +18,33 @@ const MANTER_UF = 0.02;
 
 // código IBGE da UF (2 primeiros dígitos do município) → sigla
 const UF_IBGE = {
-  11: "ro", 12: "ac", 13: "am", 14: "rr", 15: "pa", 16: "ap", 17: "to",
-  21: "ma", 22: "pi", 23: "ce", 24: "rn", 25: "pb", 26: "pe", 27: "al", 28: "se", 29: "ba",
-  31: "mg", 32: "es", 33: "rj", 35: "sp", 41: "pr", 42: "sc", 43: "rs",
-  50: "ms", 51: "mt", 52: "go", 53: "df",
+  11: "ro",
+  12: "ac",
+  13: "am",
+  14: "rr",
+  15: "pa",
+  16: "ap",
+  17: "to",
+  21: "ma",
+  22: "pi",
+  23: "ce",
+  24: "rn",
+  25: "pb",
+  26: "pe",
+  27: "al",
+  28: "se",
+  29: "ba",
+  31: "mg",
+  32: "es",
+  33: "rj",
+  35: "sp",
+  41: "pr",
+  42: "sc",
+  43: "rs",
+  50: "ms",
+  51: "mt",
+  52: "go",
+  53: "df",
 };
 
 async function malha() {
@@ -91,7 +114,10 @@ const obj = simples.objects[nome];
 const simplesUf = simplify(structuredClone(pre), quantile(pre, MANTER_UF));
 
 const municipios = feature(simples, obj);
-municipios.features = municipios.features.filter((f) => !ehIlha(f)).map(semIlhas).filter(Boolean);
+municipios.features = municipios.features
+  .filter((f) => !ehIlha(f))
+  .map(semIlhas)
+  .filter(Boolean);
 const projecao = geoMercator().fitSize([LARGURA, ALTURA], municipios);
 const geo = geoPath(projecao).digits(1);
 const caminho = (f) => {
@@ -127,7 +153,7 @@ export const VIEWBOX = "0 0 ${LARGURA} ${ALTURA}";
 export const PATHS: Record<string, string> = {
 ${linhas}
 };
-`
+`,
 );
 
 console.log(`municípios: ${Object.keys(mun).length} · estados: ${Object.keys(uf).length}`);

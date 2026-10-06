@@ -14,7 +14,6 @@ export default function Hemiciclo({ cadeiras, rotulo, sub }: { cadeiras: Cadeira
     const r0 = 0.42;
     const raios = Array.from({ length: fileiras }, (_, i) => r0 + ((1 - r0) * i) / (fileiras - 1));
     const soma = raios.reduce((s, r) => s + r, 0);
-    // quantas cadeiras em cada fileira (proporcional ao tamanho do arco)
     const qtd = raios.map((r) => Math.round((n * r) / soma));
     qtd[qtd.length - 1] += n - qtd.reduce((s, q) => s + q, 0);
 

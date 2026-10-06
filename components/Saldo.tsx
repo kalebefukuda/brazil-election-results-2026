@@ -25,8 +25,9 @@ export default function Saldo({ dados, br, a, b, onSelecionar }: Props) {
         <span className="kicker">quem puxa o placar</span>
       </div>
       <p className="mt-2 max-w-[70ch] text-[13px] leading-relaxed text-ink2">
-        Diferença de votos entre {ca.nome} e {cb.nome} em cada estado, até agora. Somando tudo, {total >= 0 ? ca.nome : cb.nome}{" "}
-        está <b className="font-semibold text-ink">{curto(Math.abs(total))} votos</b> na frente no Brasil.
+        Diferença de votos entre {ca.nome} e {cb.nome} em cada estado, até agora. Somando tudo,{" "}
+        {total >= 0 ? ca.nome : cb.nome} está <b className="font-semibold text-ink">{curto(Math.abs(total))} votos</b>{" "}
+        na frente no Brasil.
       </p>
 
       <div className="num mt-4 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] text-[12px] font-semibold">

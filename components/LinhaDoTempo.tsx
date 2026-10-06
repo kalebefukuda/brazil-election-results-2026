@@ -9,7 +9,6 @@ type Props = {
   onMudar: (i: number | null) => void;
 };
 
-// barra embaixo do mapa: arrasta pra rever a apuração em qualquer momento; "Ao vivo" volta pro agora
 export default function LinhaDoTempo({ momentos, indice, onMudar }: Props) {
   const [tocando, setTocando] = useState(false);
   const ultimo = momentos.length - 1;
@@ -85,7 +84,10 @@ export default function LinhaDoTempo({ momentos, indice, onMudar }: Props) {
           onMudar(null);
         }}
       >
-        <span className={`h-2 w-2 rounded-full ${indice === null ? "pulso" : ""}`} style={{ background: "var(--ok)" }} />
+        <span
+          className={`h-2 w-2 rounded-full ${indice === null ? "pulso" : ""}`}
+          style={{ background: "var(--ok)" }}
+        />
         Ao vivo
       </button>
     </div>

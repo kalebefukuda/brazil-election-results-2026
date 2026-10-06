@@ -5,7 +5,6 @@ import { curto, pct } from "@/lib/format";
 
 type Props = { dados: Dados; br: Resumo; a: string; b: string };
 
-// lista curta por região: quem lidera, por quanto e quanto falta
 export default function RegioesCompacto({ dados, br, a, b }: Props) {
   const grupos: [string, string[]][] = [...Object.entries(REGIOES), ["Exterior", ["zz"]]];
   const nome = (n: string) => br.cands.find((c) => c.n === n)?.nome.split(" ")[0] ?? "";
@@ -33,7 +32,9 @@ export default function RegioesCompacto({ dados, br, a, b }: Props) {
                   <span className="sw" style={{ background: cor(lider) }} />
                   <span className="text-ink2">{nome(lider)}</span>
                   <b>{pct(Math.max(pa, pb), 1)}</b>
-                  <span className="w-12 text-right text-[12px] text-ink3">+{margem.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</span>
+                  <span className="w-12 text-right text-[12px] text-ink3">
+                    +{margem.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+                  </span>
                 </span>
               </div>
               <div className="num mt-0.5 flex justify-between text-[11.5px] text-ink3">
@@ -41,10 +42,15 @@ export default function RegioesCompacto({ dados, br, a, b }: Props) {
                   {pct(ag.pst, 1)} apurado · faltam {curto(ag.esnt)} eleitores
                 </span>
               </div>
-              {/* a vs b em volta dos 50% */}
               <div className="relative mt-1.5 h-1 rounded-full bg-empty">
-                <div className="barra absolute left-0 top-0 h-full rounded-l-full" style={{ width: `${pa}%`, background: cor(a) }} />
-                <div className="barra absolute right-0 top-0 h-full rounded-r-full" style={{ width: `${pb}%`, background: cor(b) }} />
+                <div
+                  className="barra absolute left-0 top-0 h-full rounded-l-full"
+                  style={{ width: `${pa}%`, background: cor(a) }}
+                />
+                <div
+                  className="barra absolute right-0 top-0 h-full rounded-r-full"
+                  style={{ width: `${pb}%`, background: cor(b) }}
+                />
                 <span className="absolute -top-1 bottom-[-4px] left-1/2 w-px bg-ink3" />
               </div>
             </li>

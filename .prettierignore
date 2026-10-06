@@ -1,0 +1,6 @@
+public
+.next
+.cache
+node_modules
+package-lock.json
+lib/mapa-paths.ts

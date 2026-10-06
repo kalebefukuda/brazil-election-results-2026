@@ -1,7 +1,14 @@
 import type { Campo } from "@/lib/partidos";
 
-// barra esquerda / centro / direita com o número de cadeiras de cada lado
-export default function BarraCampos({ cont, total, maioria }: { cont: Record<Campo, number>; total: number; maioria?: number }) {
+export default function BarraCampos({
+  cont,
+  total,
+  maioria,
+}: {
+  cont: Record<Campo, number>;
+  total: number;
+  maioria?: number;
+}) {
   const w = (n: number) => `${(n / total) * 100}%`;
   return (
     <div>

@@ -9,7 +9,6 @@ import Foto from "./Foto";
 import Apurado from "./Apurado";
 import { IconeCompartilhar, IconeTelaCheia } from "./Icones";
 
-// placar principal do Presidente: manchete + duelo dos dois primeiros
 export default function Manchete({ br }: { br: Resumo }) {
   const [a, b] = br.cands;
   const resto = br.cands.slice(2);
@@ -29,7 +28,8 @@ export default function Manchete({ br }: { br: Resumo }) {
   if (br.definido === "e")
     titulo = (
       <>
-        <span style={{ color: cor(a.n) }}>{a.nome}</span> {turno === 1 ? "está eleito no 1º turno" : "foi eleito presidente"}
+        <span style={{ color: cor(a.n) }}>{a.nome}</span>{" "}
+        {turno === 1 ? "está eleito no 1º turno" : "foi eleito presidente"}
       </>
     );
   else if (br.definido === "s")
@@ -71,25 +71,37 @@ export default function Manchete({ br }: { br: Resumo }) {
             title="Copia o resultado e o link do site pra mandar pra alguém"
             aria-live="polite"
           >
-            {copiado ? "✓ Link copiado" : (
+            {copiado ? (
+              "✓ Link copiado"
+            ) : (
               <>
                 <IconeCompartilhar className="h-3.5 w-3.5" /> Compartilhar
               </>
             )}
           </button>
-          <button className="btn hidden !min-h-[30px] !px-2 sm:inline-flex sm:items-center" onClick={telaCheia} title="Tela cheia" aria-label="Tela cheia">
+          <button
+            className="btn hidden !min-h-[30px] !px-2 sm:inline-flex sm:items-center"
+            onClick={telaCheia}
+            title="Tela cheia"
+            aria-label="Tela cheia"
+          >
             <IconeTelaCheia />
           </button>
         </div>
       </div>
 
-      <Apurado pst={br.pst} st={br.st} ts={br.ts} esnt={br.esnt} className="mt-3 rounded-xl border border-line2 bg-card2 p-3 sm:p-3.5" />
+      <Apurado
+        pst={br.pst}
+        st={br.st}
+        ts={br.ts}
+        esnt={br.esnt}
+        className="mt-3 rounded-xl border border-line2 bg-card2 p-3 sm:p-3.5"
+      />
 
       <h1 id="t-manchete" className="mt-4 text-[26px] font-extrabold leading-[1.1] tracking-[-0.03em] sm:text-[28px]">
         {titulo}
       </h1>
 
-      {/* duelo */}
       <div className="mt-5 grid grid-cols-2 gap-3">
         {[a, b].map((c, i) => (
           <div key={c.n} className={i === 1 ? "text-right" : ""}>
@@ -108,11 +120,19 @@ export default function Manchete({ br }: { br: Resumo }) {
         ))}
       </div>
 
-      {/* barra de duas pontas com a marca dos 50% */}
       <div className="relative mt-4 h-2.5 rounded-full bg-empty">
-        <div className="barra absolute left-0 top-0 h-full rounded-l-full" style={{ width: `${a.pct}%`, background: cor(a.n) }} />
-        <div className="barra absolute right-0 top-0 h-full rounded-r-full" style={{ width: `${b.pct}%`, background: cor(b.n) }} />
-        <span className="absolute -top-1.5 bottom-[-6px] left-1/2 w-0.5 -translate-x-1/2 rounded bg-ink" title="50% dos válidos" />
+        <div
+          className="barra absolute left-0 top-0 h-full rounded-l-full"
+          style={{ width: `${a.pct}%`, background: cor(a.n) }}
+        />
+        <div
+          className="barra absolute right-0 top-0 h-full rounded-r-full"
+          style={{ width: `${b.pct}%`, background: cor(b.n) }}
+        />
+        <span
+          className="absolute -top-1.5 bottom-[-6px] left-1/2 w-0.5 -translate-x-1/2 rounded bg-ink"
+          title="50% dos válidos"
+        />
       </div>
       <div className="num mt-1.5 flex justify-between text-[11.5px] text-ink2">
         <span>{a.pct >= 50 ? "passou dos 50%" : `faltam ${pct(50 - a.pct, 1).replace("%", "")} pontos`}</span>
@@ -143,7 +163,11 @@ export default function Manchete({ br }: { br: Resumo }) {
         ))}
         {resto.length > 3 && (
           <li className="num pt-1 text-[12px] text-ink3">
-            Mais {resto.length - 3} candidaturas somam {pct(resto.slice(3).reduce((s, c) => s + c.pct, 0), 1)}
+            Mais {resto.length - 3} candidaturas somam{" "}
+            {pct(
+              resto.slice(3).reduce((s, c) => s + c.pct, 0),
+              1,
+            )}
           </li>
         )}
       </ul>

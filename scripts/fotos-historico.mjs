@@ -37,9 +37,15 @@ const CANDIDATOS = {
   },
 };
 
-const UA = { "User-Agent": "apuracao-2026/1.0 (https://brazil-election-results-2026.vercel.app; fukudadigital@gmail.com)" };
+const UA = {
+  "User-Agent": "apuracao-2026/1.0 (https://brazil-election-results-2026.vercel.app; fukudadigital@gmail.com)",
+};
 const LIVRES = /^(CC0|CC BY|CC-BY|Public domain|PD|Domínio público|Attribution)/i;
-const semTags = (s = "") => s.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+const semTags = (s = "") =>
+  s
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 async function api(base, params) {
   const url = `${base}?${new URLSearchParams({ format: "json", formatversion: "2", ...params })}`;
@@ -48,7 +54,6 @@ async function api(base, params) {
   return r.json();
 }
 
-// nome do arquivo da foto principal do artigo
 async function arquivoDoArtigo(titulo) {
   const j = await api("https://pt.wikipedia.org/w/api.php", {
     action: "query",
@@ -101,7 +106,11 @@ for (const [ano, lista] of Object.entries(CANDIDATOS)) {
     const bruto = `public/historico/fotos/${ano}/${nr}.orig`;
     const caminho = `/historico/fotos/${ano}/${nr}.jpg`;
     await writeFile(bruto, Buffer.from(await r.arrayBuffer()));
-    execFileSync("sips", ["-s", "format", "jpeg", "-s", "formatOptions", "75", "-Z", "200", bruto, "--out", `public${caminho}`], { stdio: "ignore" });
+    execFileSync(
+      "sips",
+      ["-s", "format", "jpeg", "-s", "formatOptions", "75", "-Z", "200", bruto, "--out", `public${caminho}`],
+      { stdio: "ignore" },
+    );
     await unlink(bruto);
     creditos.push({ ano: Number(ano), numero: nr, candidato: titulo, foto: caminho, arquivo, ...info });
     console.log(`  ${ano} ${nr} ${titulo}: ${info.licenca} · ${info.autor}`);

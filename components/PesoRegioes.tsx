@@ -53,7 +53,10 @@ export default function PesoRegioes({ dados, br, a, b }: Props) {
           const outros = Math.max(1 - share(a) - share(b), 0);
           const quem = s >= 0 ? ca : cb;
           return (
-            <li key={nome} className="grid grid-cols-[92px_minmax(0,1fr)_56px] items-center gap-x-3 gap-y-1 border-b border-line2 py-3 last:border-0 sm:grid-cols-[120px_minmax(0,1fr)_64px]">
+            <li
+              key={nome}
+              className="grid grid-cols-[92px_minmax(0,1fr)_56px] items-center gap-x-3 gap-y-1 border-b border-line2 py-3 last:border-0 sm:grid-cols-[120px_minmax(0,1fr)_64px]"
+            >
               <span className="font-semibold">{nome}</span>
               <div className="h-3.5">
                 <div

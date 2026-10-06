@@ -11,7 +11,15 @@ export type Ponto = { hora: string; pst: number; a: number; b: number; an: strin
 const ALTURA = 240;
 const M = { t: 12, r: 14, b: 30, l: 40 };
 
-export default function Evolucao({ hist, br, doServidor = false }: { hist: Ponto[]; br: Resumo; doServidor?: boolean }) {
+export default function Evolucao({
+  hist,
+  br,
+  doServidor = false,
+}: {
+  hist: Ponto[];
+  br: Resumo;
+  doServidor?: boolean;
+}) {
   const { turno } = useTurno();
   const boxRef = useRef<HTMLDivElement>(null);
   const [largura, setLargura] = useState(500);
@@ -38,7 +46,8 @@ export default function Evolucao({ hist, br, doServidor = false }: { hist: Ponto
 
   const x = (v: number) => M.l + (v / xMax) * w;
   const y = (v: number) => M.t + (1 - (v - yMin) / (yMax - yMin)) * h;
-  const linha = (k: "a" | "b") => pts.map((p, i) => `${i ? "L" : "M"}${x(p.pst).toFixed(1)},${y(p[k]).toFixed(1)}`).join(" ");
+  const linha = (k: "a" | "b") =>
+    pts.map((p, i) => `${i ? "L" : "M"}${x(p.pst).toFixed(1)},${y(p[k]).toFixed(1)}`).join(" ");
 
   const ticksY: number[] = [];
   for (let v = Math.ceil(yMin / 5) * 5; v <= yMax; v += 5) ticksY.push(v);
@@ -112,14 +121,7 @@ export default function Evolucao({ hist, br, doServidor = false }: { hist: Ponto
                 {v}%
               </text>
             ))}
-            <line
-              x1={M.l}
-              x2={M.l + w}
-              y1={y(50)}
-              y2={y(50)}
-              stroke="var(--ink3)"
-              strokeDasharray="4 4"
-            />
+            <line x1={M.l} x2={M.l + w} y1={y(50)} y2={y(50)} stroke="var(--ink3)" strokeDasharray="4 4" />
             <path d={linha("a")} fill="none" stroke={cor(ca.n)} strokeWidth={2} strokeLinejoin="round" />
             <path d={linha("b")} fill="none" stroke={cor(cb.n)} strokeWidth={2} strokeLinejoin="round" />
             {ph && (

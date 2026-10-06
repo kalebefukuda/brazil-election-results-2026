@@ -7,7 +7,6 @@ import type { Resumo } from "@/lib/tse";
 
 type Linha = { n: string; nome?: string; partido?: string; pct: number };
 
-// "Últimas atualizações": o que o coletor registrou, mais novo em cima
 export default function Feed({ eventos, br }: { eventos: EventoFeed[]; br: Resumo }) {
   const nome = (l: Linha) => l.nome ?? br.cands.find((c) => c.n === l.n)?.nome ?? l.n;
 
@@ -21,12 +20,20 @@ export default function Feed({ eventos, br }: { eventos: EventoFeed[]; br: Resum
       ) : (
         <ol className="rolagem -mr-2 mt-2 min-h-0 flex-1 overflow-y-auto pr-2">
           {eventos.map((e, i) => (
-            <li key={`${e.momento}-${e.tipo}-${e.uf ?? ""}-${i}`} className="flex gap-3 border-b border-line2 py-3 last:border-0">
+            <li
+              key={`${e.momento}-${e.tipo}-${e.uf ?? ""}-${i}`}
+              className="flex gap-3 border-b border-line2 py-3 last:border-0"
+            >
               <span className="num w-[42px] flex-none pt-0.5 text-[12px] text-ink3">{horaBrasilia(e.momento)}</span>
               <span
                 aria-hidden
                 className="mt-1 h-3 w-3 flex-none rounded-full border-2"
-                style={{ borderColor: e.tipo === "secoes" ? "var(--ink2)" : cor((e.dados.top as Linha[] | undefined)?.[0]?.n ?? (e.dados.eleito as Linha | undefined)?.n) }}
+                style={{
+                  borderColor:
+                    e.tipo === "secoes"
+                      ? "var(--ink2)"
+                      : cor((e.dados.top as Linha[] | undefined)?.[0]?.n ?? (e.dados.eleito as Linha | undefined)?.n),
+                }}
               />
               <div className="min-w-0 text-[13px] leading-snug">
                 <Texto e={e} nome={nome} />
@@ -65,8 +72,8 @@ function Texto({ e, nome }: { e: EventoFeed; nome: (l: Linha) => string }) {
       </p>
     ) : (
       <p>
-        <b style={{ color: cor(a?.n) }}>{a && nome(a)}</b> e <b style={{ color: cor(b?.n) }}>{b && nome(b)}</b> vão ao 2º
-        turno.
+        <b style={{ color: cor(a?.n) }}>{a && nome(a)}</b> e <b style={{ color: cor(b?.n) }}>{b && nome(b)}</b> vão ao
+        2º turno.
       </p>
     );
   }

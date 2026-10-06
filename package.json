@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "format": "prettier --write .",
+    "malha": "node scripts/malha.mjs",
+    "historico:fotos": "node scripts/fotos-historico.mjs",
+    "historico": "node scripts/historico.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
@@ -23,6 +26,7 @@
     "@types/react-dom": "^19",
     "@types/topojson-client": "^3.1.5",
     "d3-geo": "^3.1.1",
+    "prettier": "^3.9.9",
     "tailwindcss": "4.3.3",
     "topojson-client": "^3.1.0",
     "topojson-simplify": "^3.0.3",

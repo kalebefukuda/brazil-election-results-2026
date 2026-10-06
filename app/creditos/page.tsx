@@ -17,11 +17,18 @@ export default function Creditos() {
           ← Apuração 2026
         </Link>
       </p>
-      <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">Créditos das fotos</h1>
+      <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">
+        Créditos das fotos
+      </h1>
       <p className="mt-3 max-w-[62ch] text-[13.5px] leading-relaxed text-ink2">
-        As fotos dos candidatos de 2026 são as da divulgação oficial do TSE. O TSE não publica mais as de eleições passadas,
-        então as de 2018 e 2022 vêm da{" "}
-        <a className="underline underline-offset-2 hover:text-ink" href="https://commons.wikimedia.org" target="_blank" rel="noopener noreferrer">
+        As fotos dos candidatos de 2026 são as da divulgação oficial do TSE. O TSE não publica mais as de eleições
+        passadas, então as de 2018 e 2022 vêm da{" "}
+        <a
+          className="underline underline-offset-2 hover:text-ink"
+          href="https://commons.wikimedia.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           Wikimedia Commons
         </a>
         , reduzidas para miniatura, com a licença de cada uma abaixo.
@@ -36,19 +43,38 @@ export default function Creditos() {
             {creditos
               .filter((c) => c.ano === ano)
               .map((c) => (
-                <li key={c.numero} className="flex items-center gap-3 border-b border-line2 py-2.5 text-[13px] last:border-0">
+                <li
+                  key={c.numero}
+                  className="flex items-center gap-3 border-b border-line2 py-2.5 text-[13px] last:border-0"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={c.foto} alt="" width={36} height={36} className="h-9 w-9 flex-none rounded-full object-cover object-top" />
+                  <img
+                    src={c.foto}
+                    alt=""
+                    width={36}
+                    height={36}
+                    className="h-9 w-9 flex-none rounded-full object-cover object-top"
+                  />
                   <span className="min-w-0">
                     <span className="block font-semibold">{c.candidato}</span>
                     <span className="text-ink3">
                       Foto:{" "}
-                      <a className="underline underline-offset-2 hover:text-ink" href={c.pagina} target="_blank" rel="noopener noreferrer">
+                      <a
+                        className="underline underline-offset-2 hover:text-ink"
+                        href={c.pagina}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         {c.autor}
                       </a>
                       ,{" "}
                       {c.licencaUrl ? (
-                        <a className="underline underline-offset-2 hover:text-ink" href={c.licencaUrl} target="_blank" rel="noopener noreferrer">
+                        <a
+                          className="underline underline-offset-2 hover:text-ink"
+                          href={c.licencaUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
                           {c.licenca}
                         </a>
                       ) : (

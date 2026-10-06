@@ -1,6 +1,5 @@
 import { curto, fmt, pct } from "@/lib/format";
 
-// destaque de quanto já foi apurado: % grande, barra verde e quanto falta
 export default function Apurado({
   pst,
   st,
@@ -37,7 +36,9 @@ export default function Apurado({
         )}
       </div>
       {!acabou && esnt !== undefined && esnt > 0 && (
-        <p className="num mt-0.5 text-[11.5px] text-ink2 sm:text-right">{curto(esnt)} de eleitores ainda não apurados</p>
+        <p className="num mt-0.5 text-[11.5px] text-ink2 sm:text-right">
+          {curto(esnt)} de eleitores ainda não apurados
+        </p>
       )}
     </div>
   );

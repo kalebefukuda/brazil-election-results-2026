@@ -8,7 +8,9 @@ export default function Topo(p: { br: Resumo | null }) {
   return (
     <header className="mb-6 flex flex-col gap-4 sm:mb-8 ">
       <div>
-        <p className="kicker mb-2">Eleições {ano} · {turno}º turno</p>
+        <p className="kicker mb-2">
+          Eleições {ano} · {turno}º turno
+        </p>
         <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">
           Apuração para Presidente
         </h1>

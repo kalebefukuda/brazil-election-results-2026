@@ -16,14 +16,14 @@ export default function Projecao({ dados, br }: { dados: Dados; br: Resumo }) {
   const primeiro = lista[0];
   const segundo = lista[1];
 
-  // quanto mais apurado, mais confiável
   let confianca = "baixa";
   if (br.pst >= 60) confianca = "alta";
   else if (br.pst >= 30) confianca = "média";
 
   let veredito: string;
   if (br.definido === "e") veredito = `Definido: ${br.cands[0].nome} eleito${turno === 1 ? " no 1º turno" : ""}.`;
-  else if (br.definido === "s") veredito = `Definido: vai ter 2º turno entre ${br.cands[0].nome} e ${br.cands[1].nome}.`;
+  else if (br.definido === "s")
+    veredito = `Definido: vai ter 2º turno entre ${br.cands[0].nome} e ${br.cands[1].nome}.`;
   else if (br.pst >= 99.9) veredito = "Apuração encerrada.";
   else if (primeiro.final > 50) veredito = `Nesse ritmo, ${primeiro.nome} venceria no 1º turno.`;
   else veredito = `Nesse ritmo, teria 2º turno entre ${primeiro.nome} e ${segundo.nome}.`;
@@ -76,8 +76,8 @@ export default function Projecao({ dados, br }: { dados: Dados; br: Resumo }) {
 
       <p className="mt-3 border-t border-line2 pt-3 text-[12px] leading-relaxed text-ink2">
         Como é calculado: em cada estado, supõe que as seções que faltam votam igual às já apuradas ali. Confiança{" "}
-        <b className="font-semibold text-ink">{confianca}</b> com {pct(br.pst, 1)} apurado — capital e interior
-        costumam entrar em horários diferentes, então a projeção oscila no começo. O resultado oficial é o do TSE.
+        <b className="font-semibold text-ink">{confianca}</b> com {pct(br.pst, 1)} apurado — capital e interior costumam
+        entrar em horários diferentes, então a projeção oscila no começo. O resultado oficial é o do TSE.
       </p>
     </section>
   );

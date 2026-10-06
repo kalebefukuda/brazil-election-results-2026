@@ -33,7 +33,12 @@ export function useOnline() {
       try {
         const r = await fetch(`${URL}/rest/v1/rpc/apuracao_ping`, {
           method: "POST",
-          headers: { apikey: KEY!, Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
+          // chave anon antiga (JWT) vai também no Authorization; a publishable nova (sb_publishable_…) só no apikey
+          headers: {
+            apikey: KEY!,
+            "Content-Type": "application/json",
+            ...(KEY!.startsWith("eyJ") ? { Authorization: `Bearer ${KEY}` } : {}),
+          },
           body: JSON.stringify({ p_id: id }),
         });
         if (r.ok && !parado) setN(await r.json());

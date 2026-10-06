@@ -5,12 +5,7 @@ import { ufDoMunicipio } from "@/lib/brasil";
 import type { MunUf } from "@/lib/municipios";
 
 // "São José" acha "sao jose"
-const normal = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .trim();
+const normal = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
 type Props = {
   porUf: Record<string, MunUf>;
@@ -26,11 +21,11 @@ export default function BuscaCidade({ porUf, onEscolher }: Props) {
   const todos = useMemo(() => {
     const lista: { cdi: string; nome: string; uf: string; chave: string }[] = [];
     for (const d of Object.values(porUf))
-      for (const [cdi, nome] of Object.entries(d.nomes)) lista.push({ cdi, nome, uf: ufDoMunicipio(cdi), chave: normal(nome) });
+      for (const [cdi, nome] of Object.entries(d.nomes))
+        lista.push({ cdi, nome, uf: ufDoMunicipio(cdi), chave: normal(nome) });
     return lista;
   }, [porUf]);
 
-  // começa com o texto primeiro, depois contém; cidade maior (mais eleitores) não importa aqui, nome manda
   const achados = useMemo(() => {
     const q = normal(texto);
     if (q.length < 2) return [];
@@ -54,10 +49,12 @@ export default function BuscaCidade({ porUf, onEscolher }: Props) {
         role="combobox"
         aria-expanded={aberto && achados.length > 0}
         aria-controls={id}
+        aria-autocomplete="list"
+        aria-activedescendant={aberto && achados[ativo] ? `${id}-${achados[ativo].cdi}` : undefined}
         aria-label="Buscar cidade no mapa"
         placeholder={todos.length ? "Buscar cidade…" : "Carregando cidades…"}
         disabled={!todos.length}
-        className="btn !min-h-[32px] w-[170px] !text-[12px] placeholder:text-ink3 focus:w-[220px] sm:w-[190px]"
+        className="btn !min-h-[32px] w-[170px] !text-[16px] placeholder:text-ink3 focus:w-[220px] sm:w-[190px] sm:!text-[12px]"
         value={texto}
         onChange={(e) => {
           setTexto(e.target.value);
@@ -87,6 +84,7 @@ export default function BuscaCidade({ porUf, onEscolher }: Props) {
           {achados.map((m, i) => (
             <li
               key={m.cdi}
+              id={`${id}-${m.cdi}`}
               role="option"
               aria-selected={i === ativo}
               className={`flex cursor-pointer justify-between gap-3 rounded-md px-2.5 py-1.5 text-[12.5px] ${

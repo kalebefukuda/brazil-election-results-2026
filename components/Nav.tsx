@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuto } from "@/lib/auto";
 import { useOnline } from "@/lib/online";
-import { IconeAtualizar, IconePausa, IconePessoas, IconePlay } from "./Icones";
+import { IconePausa, IconePessoas, IconePlay } from "./Icones";
 
 export default function Nav() {
   const path = usePathname();
@@ -101,7 +101,6 @@ export default function Nav() {
             onChange={(e) => auto.setIntervalo(Number(e.target.value))}
             aria-label="Intervalo de atualização"
           >
-            <option value={30}>30s</option>
             <option value={60}>1 min</option>
             <option value={120}>2 min</option>
             <option value={300}>5 min</option>
@@ -113,15 +112,6 @@ export default function Nav() {
             title={auto.rodando ? "Pausar" : "Retomar"}
           >
             {auto.rodando ? <IconePausa /> : <IconePlay />}
-          </button>
-          <button
-            className="btn inline-flex !min-h-[34px] items-center gap-1.5 !px-2.5 font-semibold"
-            onClick={auto.agora}
-            disabled={auto.atualizando}
-            title="Atualizar agora"
-          >
-            <IconeAtualizar className={`h-4 w-4 ${auto.atualizando ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">Atualizar</span>
           </button>
           {botaoTema}
         </div>

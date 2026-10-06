@@ -62,15 +62,6 @@ export function IconePlay({ className = "h-4 w-4" }: P) {
   );
 }
 
-export function IconeAtualizar({ className = "h-4 w-4" }: P) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} {...base}>
-      <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-      <path d="M21 4v5h-5" />
-    </svg>
-  );
-}
-
 export function IconePessoas({ className = "h-4 w-4" }: P) {
   return (
     <svg viewBox="0 0 24 24" className={className} {...base}>

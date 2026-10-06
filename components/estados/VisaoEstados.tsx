@@ -47,7 +47,7 @@ export default function VisaoEstados() {
     });
     setErro(
       falhas === pedidos.length
-        ? "Não consegui falar com o TSE agora. Vou tentar de novo sozinho — ou toque em Atualizar."
+        ? "Não consegui falar com o TSE agora. Vou tentar de novo sozinho na próxima atualização."
         : falhas
           ? "Alguns estados não vieram nessa rodada; mostrando o último dado deles."
           : ""

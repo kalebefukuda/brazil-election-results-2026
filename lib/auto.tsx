@@ -24,12 +24,14 @@ export function AutoProvider({ children }: { children: React.ReactNode }) {
   const [atualizando, setAtualizando] = useState(false);
   const [ultima, setUltima] = useState("");
   const fnRef = useRef<(() => Promise<void>) | null>(null);
+  const ultimaVez = useRef(0);
   const intervaloRef = useRef(intervalo);
   intervaloRef.current = intervalo;
 
   const agora = useCallback(async () => {
     setFalta(intervaloRef.current);
     if (!fnRef.current) return;
+    ultimaVez.current = Date.now();
     setAtualizando(true);
     try {
       await fnRef.current();
@@ -62,10 +64,10 @@ export function AutoProvider({ children }: { children: React.ReactNode }) {
     setFalta(intervalo);
   }, [intervalo]);
 
-  // voltou pra aba: atualiza na hora
+  // voltou pra aba: atualiza na hora, se a última busca já tiver mais de 1 min
   useEffect(() => {
     const vis = () => {
-      if (!document.hidden && rodando) agora();
+      if (!document.hidden && rodando && Date.now() - ultimaVez.current > 60_000) agora();
     };
     document.addEventListener("visibilitychange", vis);
     return () => document.removeEventListener("visibilitychange", vis);

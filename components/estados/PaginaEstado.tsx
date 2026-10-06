@@ -31,7 +31,7 @@ export default function PaginaEstado({ uf }: { uf: string }) {
       setErro(
         e instanceof Error && e.message === "sem dados"
           ? "O TSE ainda não publicou esse cargo pra esse estado."
-          : "Não consegui falar com o TSE agora. Vou tentar de novo sozinho — ou toque em Atualizar."
+          : "Não consegui falar com o TSE agora. Vou tentar de novo sozinho na próxima atualização."
       );
     }
   }, [uf, cargo]);

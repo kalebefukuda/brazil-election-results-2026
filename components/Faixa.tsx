@@ -1,27 +1,20 @@
 import { FUKUDA } from "@/lib/fukuda";
+import LogoFukuda from "./LogoFukuda";
 
-// faixa fina acima do menu: quem fez o site e como falar com a gente
+// faixa fina acima do menu: discreta, mas no lugar que todo mundo olha
 export default function Faixa() {
   return (
-    <div className="border-b border-line2 px-4 py-2 text-center text-[12px] leading-snug text-ink2 sm:text-[13px]">
-      Feito pela{" "}
-      <a
-        className="font-semibold text-ink underline-offset-2 hover:underline"
-        href={FUKUDA.site}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        FukudaDigital
-      </a>
-      <span className="hidden sm:inline">, {FUKUDA.slogan}</span>.{" "}
-      <a
-        className="whitespace-nowrap font-medium text-ink underline underline-offset-2"
-        href={FUKUDA.whatsapp}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Fale com a gente →
-      </a>
-    </div>
+    <a
+      href={FUKUDA.site}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex items-center justify-center gap-1.5 border-b border-line2 py-1.5 text-[11.5px] text-ink3 transition-colors hover:text-ink2"
+    >
+      <LogoFukuda className="h-3 w-auto text-ink2" />
+      Feito pela <span className="font-semibold text-ink2 group-hover:text-ink">FukudaDigital</span>
+      <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
+        →
+      </span>
+    </a>
   );
 }

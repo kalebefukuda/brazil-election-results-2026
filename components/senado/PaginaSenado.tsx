@@ -1,18 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState } from "react";
-import { NOMES, REGIOES } from "@/lib/brasil";
+import { useCallback, useEffect, useState } from "react";
+import { NOMES, UFS_ESTADOS } from "@/lib/brasil";
 import { baixarCargo, somaApuracao, type ResultadoCargo } from "@/lib/cargos";
 import { campo, corPartido, partidoPrincipal, type Campo } from "@/lib/partidos";
 import { pct } from "@/lib/format";
 import { useAtualizacao } from "@/lib/auto";
-import { useTurno } from "@/lib/turno";
+import { chaveEleicao, descobrirTurno, useTurno } from "@/lib/turno";
 import Hemiciclo, { type Cadeira } from "../Hemiciclo";
 import BarraCampos from "../BarraCampos";
 import Apurado from "../Apurado";
-
-const UFS_ESTADOS = Object.values(REGIOES).flat();
 
 export default function PaginaSenado() {
   const { ano } = useTurno();
@@ -20,8 +18,13 @@ export default function PaginaSenado() {
   const [erro, setErro] = useState("");
   const [pagina, setPagina] = useState(0);
 
+  useEffect(() => setDados({}), [ano]);
+
   const atualizar = useCallback(async () => {
+    await descobrirTurno();
+    const alvo = chaveEleicao();
     const res = await Promise.allSettled(UFS_ESTADOS.map((uf) => baixarCargo(uf, "5")));
+    if (chaveEleicao() !== alvo) return;
     let falhas = 0;
     setDados((antigo) => {
       const novo = { ...antigo };
@@ -63,8 +66,8 @@ export default function PaginaSenado() {
     .sort(
       (x, y) =>
         ordemCampo.indexOf(campo(x.c.partido)) - ordemCampo.indexOf(campo(y.c.partido)) ||
-        (porPartido[partidoPrincipal(y.c.partido)].lider - porPartido[partidoPrincipal(x.c.partido)].lider) ||
-        partidoPrincipal(x.c.partido).localeCompare(partidoPrincipal(y.c.partido))
+        porPartido[partidoPrincipal(y.c.partido)].lider - porPartido[partidoPrincipal(x.c.partido)].lider ||
+        partidoPrincipal(x.c.partido).localeCompare(partidoPrincipal(y.c.partido)),
     )
     .map((o) => ({
       cor: corPartido(o.c.partido),
@@ -186,18 +189,30 @@ export default function PaginaSenado() {
                   Disputas pela última vaga
                 </h2>
                 <div className="flex items-center gap-1">
-                  <button className="btn !min-h-[30px] !px-2" disabled={pag === 0} onClick={() => setPagina(pag - 1)} aria-label="Anteriores">
+                  <button
+                    className="btn !min-h-[30px] !px-2"
+                    disabled={pag === 0}
+                    onClick={() => setPagina(pag - 1)}
+                    aria-label="Anteriores"
+                  >
                     ‹
                   </button>
                   <span className="num w-10 text-center text-[12px] text-ink2">
                     {pag + 1}/{paginas}
                   </span>
-                  <button className="btn !min-h-[30px] !px-2" disabled={pag >= paginas - 1} onClick={() => setPagina(pag + 1)} aria-label="Próximas">
+                  <button
+                    className="btn !min-h-[30px] !px-2"
+                    disabled={pag >= paginas - 1}
+                    onClick={() => setPagina(pag + 1)}
+                    aria-label="Próximas"
+                  >
                     ›
                   </button>
                 </div>
               </div>
-              <p className="mt-1 text-[13px] text-ink2">As mais apertadas primeiro: quem está entrando × quem está logo atrás.</p>
+              <p className="mt-1 text-[13px] text-ink2">
+                As mais apertadas primeiro: quem está entrando × quem está logo atrás.
+              </p>
               {disputas.length === 0 ? (
                 <p className="py-6 text-center text-[13px] text-ink2">Nenhuma disputa em aberto.</p>
               ) : (

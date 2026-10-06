@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { NOMES, REGIOES } from "@/lib/brasil";
+import { NOMES, UFS_ESTADOS } from "@/lib/brasil";
 import PaginaEstado from "@/components/estados/PaginaEstado";
-
-const UFS_ESTADOS = Object.values(REGIOES).flat();
 
 export function generateStaticParams() {
   return UFS_ESTADOS.map((uf) => ({ uf }));

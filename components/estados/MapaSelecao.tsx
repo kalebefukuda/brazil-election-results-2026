@@ -5,7 +5,6 @@ import { useState } from "react";
 import { PATHS, VIEWBOX } from "@/lib/mapa-paths";
 import { NOMES, REGIAO_DE } from "@/lib/brasil";
 
-// mapa pequeno só pra escolher o estado: a região filtrada fica em destaque
 export default function MapaSelecao({ regiao }: { regiao: string }) {
   const router = useRouter();
   const [hover, setHover] = useState<string | null>(null);
@@ -18,7 +17,12 @@ export default function MapaSelecao({ regiao }: { regiao: string }) {
 
   return (
     <div className="relative">
-      <svg viewBox={VIEWBOX} className="mx-auto block h-auto w-full max-w-[300px]" role="group" aria-label="Escolha um estado no mapa">
+      <svg
+        viewBox={VIEWBOX}
+        className="mx-auto block h-auto w-full max-w-[300px]"
+        role="group"
+        aria-label="Escolha um estado no mapa"
+      >
         {Object.entries(PATHS).map(([uf, d]) => (
           <path
             key={uf}

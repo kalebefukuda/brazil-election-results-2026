@@ -2,18 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
-import { NOMES, REGIAO_DE, REGIOES } from "@/lib/brasil";
+import { useCallback, useEffect, useState } from "react";
+import { NOMES, REGIAO_DE, REGIOES, UFS_ESTADOS } from "@/lib/brasil";
 import { baixarCargo, situacaoGovernador, somaApuracao, type ResultadoCargo } from "@/lib/cargos";
 import { pct } from "@/lib/format";
 import { useAtualizacao } from "@/lib/auto";
-import { useTurno } from "@/lib/turno";
+import { chaveEleicao, descobrirTurno, useTurno } from "@/lib/turno";
 import Situacao from "./Situacao";
 import MapaSelecao from "./MapaSelecao";
 import { IconeBusca } from "../Icones";
 import Apurado from "../Apurado";
-
-const UFS_ESTADOS = Object.values(REGIOES).flat();
 
 const semAcento = (s: string) =>
   s
@@ -31,12 +29,17 @@ export default function VisaoEstados() {
   const [busca, setBusca] = useState("");
   const router = useRouter();
 
+  useEffect(() => setDados({}), [ano, turno]);
+
   const atualizar = useCallback(async () => {
+    await descobrirTurno();
+    const alvo = chaveEleicao();
     const pedidos = UFS_ESTADOS.flatMap((uf) => [
       baixarCargo(uf, "3").then((r) => ({ uf, tipo: "gov" as const, r })),
       baixarCargo(uf, "5").then((r) => ({ uf, tipo: "sen" as const, r })),
     ]);
     const res = await Promise.allSettled(pedidos);
+    if (chaveEleicao() !== alvo) return;
     let falhas = 0;
     setDados((antigo) => {
       const novo: PorUf = { ...antigo };
@@ -52,13 +55,12 @@ export default function VisaoEstados() {
         ? "Não consegui falar com o TSE agora. Vou tentar de novo sozinho na próxima atualização."
         : falhas
           ? "Alguns estados não vieram nessa rodada; mostrando o último dado deles."
-          : ""
+          : "",
     );
   }, []);
 
   useAtualizacao(atualizar);
 
-  // quantos estados cada partido lidera pra governador
   const placar: Record<string, number> = {};
   for (const uf of UFS_ESTADOS) {
     const g = dados[uf]?.gov;
@@ -71,19 +73,20 @@ export default function VisaoEstados() {
   const carregou = Object.keys(dados).length > 0;
   const apur = somaApuracao(UFS_ESTADOS.map((uf) => dados[uf]?.gov));
 
-  // filtro por região + busca por nome/sigla
   const termo = semAcento(busca.trim());
   const visiveis = UFS_ESTADOS.filter(
     (uf) =>
       (regiao === "Todas" || REGIAO_DE[uf] === regiao) &&
-      (!termo || semAcento(NOMES[uf]).includes(termo) || uf === termo)
+      (!termo || semAcento(NOMES[uf]).includes(termo) || uf === termo),
   );
 
   return (
     <main className="mx-auto max-w-[1240px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8">
       <header className="mb-6 flex flex-col gap-4 sm:mb-8 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="kicker mb-2">Eleições {ano} · {turno}º turno</p>
+          <p className="kicker mb-2">
+            Eleições {ano} · {turno}º turno
+          </p>
           <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">
             Governadores e Senado
           </h1>
@@ -143,57 +146,62 @@ export default function VisaoEstados() {
       ) : (
         <div className="entra flex flex-col gap-8">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <section className="card p-5 sm:p-6" aria-labelledby="t-escolha">
-            <h2 id="t-escolha" className="titulo">
-              Escolha o estado
-            </h2>
-            <p className="mt-1 text-[13px] text-ink2">Toque no mapa ou na sigla pra abrir governador, senado e deputados.</p>
-            <div className="mt-4 grid grid-cols-1 items-center gap-5 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
-              <MapaSelecao regiao={regiao} />
-              <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-4 xl:grid-cols-5">
-                {UFS_ESTADOS.filter((uf) => regiao === "Todas" || REGIAO_DE[uf] === regiao).map((uf) => (
-                  <Link
-                    key={uf}
-                    href={`/estados/${uf}`}
-                    title={NOMES[uf]}
-                    className="flex h-10 items-center justify-center rounded-lg border border-line text-[13px] font-semibold transition-colors hover:border-ink3 hover:bg-card2"
-                  >
-                    {uf.toUpperCase()}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-          {placarLista.length > 0 && (
-            <section className="card p-5 sm:p-6" aria-labelledby="t-placar">
-              <h2 id="t-placar" className="titulo">
-                Partidos na frente para governador
+            <section className="card p-5 sm:p-6" aria-labelledby="t-escolha">
+              <h2 id="t-escolha" className="titulo">
+                Escolha o estado
               </h2>
-              <p className="mt-1 text-[13px] text-ink2">Em quantos estados cada partido lidera agora.</p>
-              <div className="num mt-3 flex flex-wrap gap-2 text-[12.5px]">
-                <span className="rounded-full bg-[color-mix(in_srgb,var(--ok)_18%,transparent)] px-2.5 py-1 font-semibold text-[var(--ok)]">
-                  {govEleitos} já eleitos
-                </span>
-                <span className="rounded-full bg-[color-mix(in_srgb,var(--c70)_18%,transparent)] px-2.5 py-1 font-semibold text-[var(--c70)]">
-                  {govSegundo} com 2º turno garantido
-                </span>
-                <span className="rounded-full border border-line px-2.5 py-1 text-ink2">
-                  {27 - govEleitos - govSegundo} ainda em aberto
-                </span>
+              <p className="mt-1 text-[13px] text-ink2">
+                Toque no mapa ou na sigla pra abrir governador, senado e deputados.
+              </p>
+              <div className="mt-4 grid grid-cols-1 items-center gap-5 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
+                <MapaSelecao regiao={regiao} />
+                <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-4 xl:grid-cols-5">
+                  {UFS_ESTADOS.filter((uf) => regiao === "Todas" || REGIAO_DE[uf] === regiao).map((uf) => (
+                    <Link
+                      key={uf}
+                      href={`/estados/${uf}`}
+                      title={NOMES[uf]}
+                      className="flex h-10 items-center justify-center rounded-lg border border-line text-[13px] font-semibold transition-colors hover:border-ink3 hover:bg-card2"
+                    >
+                      {uf.toUpperCase()}
+                    </Link>
+                  ))}
+                </div>
               </div>
-              <ul className="num mt-4 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
-                {placarLista.map(([partido, n]) => (
-                  <li key={partido} className="grid grid-cols-[84px_minmax(0,1fr)_28px] items-center gap-3">
-                    <span className="truncate text-[13px] font-semibold">{partido}</span>
-                    <span className="h-2.5 overflow-hidden rounded-full bg-empty">
-                      <span className="barra block h-full rounded-full bg-ink2" style={{ width: `${(n / totalLiderando) * 100}%` }} />
-                    </span>
-                    <span className="text-right font-bold">{n}</span>
-                  </li>
-                ))}
-              </ul>
             </section>
-          )}
+            {placarLista.length > 0 && (
+              <section className="card p-5 sm:p-6" aria-labelledby="t-placar">
+                <h2 id="t-placar" className="titulo">
+                  Partidos na frente para governador
+                </h2>
+                <p className="mt-1 text-[13px] text-ink2">Em quantos estados cada partido lidera agora.</p>
+                <div className="num mt-3 flex flex-wrap gap-2 text-[12.5px]">
+                  <span className="rounded-full bg-[color-mix(in_srgb,var(--ok)_18%,transparent)] px-2.5 py-1 font-semibold text-[var(--ok)]">
+                    {govEleitos} já eleitos
+                  </span>
+                  <span className="rounded-full bg-[color-mix(in_srgb,var(--c70)_18%,transparent)] px-2.5 py-1 font-semibold text-[var(--c70)]">
+                    {govSegundo} com 2º turno garantido
+                  </span>
+                  <span className="rounded-full border border-line px-2.5 py-1 text-ink2">
+                    {27 - govEleitos - govSegundo} ainda em aberto
+                  </span>
+                </div>
+                <ul className="num mt-4 grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
+                  {placarLista.map(([partido, n]) => (
+                    <li key={partido} className="grid grid-cols-[84px_minmax(0,1fr)_28px] items-center gap-3">
+                      <span className="truncate text-[13px] font-semibold">{partido}</span>
+                      <span className="h-2.5 overflow-hidden rounded-full bg-empty">
+                        <span
+                          className="barra block h-full rounded-full bg-ink2"
+                          style={{ width: `${(n / totalLiderando) * 100}%` }}
+                        />
+                      </span>
+                      <span className="text-right font-bold">{n}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
 
           {visiveis.length === 0 && (
@@ -209,17 +217,19 @@ export default function VisaoEstados() {
           {Object.entries(REGIOES)
             .filter(([, ufs]) => ufs.some((uf) => visiveis.includes(uf)))
             .map(([nomeRegiao, ufs]) => (
-            <section key={nomeRegiao} aria-labelledby={`t-${nomeRegiao}`}>
-              <h2 id={`t-${nomeRegiao}`} className="titulo mb-3">
-                {nomeRegiao}
-              </h2>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {ufs.filter((uf) => visiveis.includes(uf)).map((uf) => (
-                  <CardEstado key={uf} uf={uf} gov={dados[uf]?.gov} sen={dados[uf]?.sen} />
-                ))}
-              </div>
-            </section>
-          ))}
+              <section key={nomeRegiao} aria-labelledby={`t-${nomeRegiao}`}>
+                <h2 id={`t-${nomeRegiao}`} className="titulo mb-3">
+                  {nomeRegiao}
+                </h2>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {ufs
+                    .filter((uf) => visiveis.includes(uf))
+                    .map((uf) => (
+                      <CardEstado key={uf} uf={uf} gov={dados[uf]?.gov} sen={dados[uf]?.sen} />
+                    ))}
+                </div>
+              </section>
+            ))}
         </div>
       )}
     </main>
@@ -297,9 +307,7 @@ function CardEstado({ uf, gov, sen }: { uf: string; gov?: ResultadoCargo; sen?: 
           ))}
         </ul>
       )}
-      <span className="mt-4 text-[12.5px] font-semibold text-ink2 group-hover:text-ink">
-        Ver todos e deputados →
-      </span>
+      <span className="mt-4 text-[12.5px] font-semibold text-ink2 group-hover:text-ink">Ver todos e deputados →</span>
     </Link>
   );
 }

@@ -4,16 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAtualizacao } from "@/lib/auto";
 import { UFS } from "@/lib/brasil";
 import { baixar, type Resumo } from "@/lib/tse";
-import { codigos, ehPassada } from "@/lib/eleicao";
-import { descobrirTurno, useTurno } from "@/lib/turno";
-import { ANO_ATUAL } from "@/lib/eleicao";
+import { ANO_ATUAL, codigos, ehPassada } from "@/lib/eleicao";
+import { chaveEleicao, descobrirTurno, useTurno } from "@/lib/turno";
 import type { Dados } from "@/lib/calc";
-import { fotoParaResumo, horaBrasilia, type Historico } from "@/lib/historico";
+import { fotoParaResumo, horaBrasilia, N_CAMPOS, type Historico } from "@/lib/historico";
 import Topo from "./Topo";
 import Manchete from "./Manchete";
 import RegioesCompacto from "./RegioesCompacto";
 import Projecao from "./Projecao";
-import Mapa from "./Mapa";
+import Mapa from "./mapa/Mapa";
 import DetalheEstado from "./DetalheEstado";
 import PesoRegioes from "./PesoRegioes";
 import Saldo from "./Saldo";
@@ -30,49 +29,50 @@ export default function Painel() {
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [hist, setHist] = useState<Ponto[]>([]);
   const [historico, setHistorico] = useState<Historico | null>(null);
-  const [indice, setIndice] = useState<number | null>(null); // null = ao vivo; número = foto da linha do tempo
+  const [indice, setIndice] = useState<number | null>(null); // foto da linha do tempo; null = ao vivo
   const detalheRef = useRef<HTMLDivElement>(null);
   const vista = useTurno();
-  // ano passado: só o resultado final (sem feed, sem gráfico da apuração, sem linha do tempo)
   const passado = vista.ano !== ANO_ATUAL;
+  const eleicaoVista = codigos(vista.ano, vista.turno).presidente;
 
-  // trocou de ano/turno: sai do replay
-  useEffect(() => setIndice(null), [vista.ano, vista.turno]);
-
-  const [chaveHist, setChaveHist] = useState<string | null>(null);
-
-  // histórico salvo no navegador (só pra este visitante), um por turno
+  // trocou de eleição: nada da anterior pode ficar na tela
   useEffect(() => {
-    if (!chaveHist) return;
+    setIndice(null);
+    setBr(null);
+    setDados({});
+    setHistorico(null);
+    setErro("");
     try {
-      const salvo = localStorage.getItem(chaveHist);
+      const salvo = localStorage.getItem(`hist-${eleicaoVista}`);
       setHist(salvo ? JSON.parse(salvo) : []);
-    } catch {}
-  }, [chaveHist]);
+    } catch {
+      setHist([]);
+    }
+  }, [eleicaoVista]);
 
   const atualizar = useCallback(async () => {
     const { ano, turno } = await descobrirTurno();
+    const alvo = chaveEleicao();
     const eleicao = codigos(ano, turno).presidente;
-    const chave = `hist-${eleicao}`;
-    setChaveHist(chave);
     const todos = ["br", ...UFS];
-    // histórico (linha do tempo + feed) vem do coletor; se falhar, o resto do painel segue normal
-    if (ehPassada(eleicao)) setHistorico(null);
-    else
-      fetch(`/api/historico?e=${eleicao}`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((h: Historico | null) => h && setHistorico(h))
-        .catch(() => {});
-    const res = await Promise.allSettled(todos.map((uf) => baixar(uf)));
+    const [res, hist] = await Promise.all([
+      Promise.allSettled(todos.map((uf) => baixar(uf, eleicao))),
+      ehPassada(eleicao)
+        ? null
+        : fetch(`/api/historico?e=${eleicao}`)
+            .then((r) => (r.ok ? (r.json() as Promise<Historico>) : null))
+            .catch(() => null),
+    ]);
+    if (chaveEleicao() !== alvo) return;
+
+    if (hist) setHistorico(hist);
     const novos: Dados = {};
     const falhas: string[] = [];
     let nacional: Resumo | null = null;
-
     res.forEach((r, i) => {
-      if (r.status === "fulfilled") {
-        if (todos[i] === "br") nacional = r.value;
-        else novos[todos[i]] = r.value;
-      } else falhas.push(todos[i].toUpperCase());
+      if (r.status === "rejected") falhas.push(todos[i].toUpperCase());
+      else if (todos[i] === "br") nacional = r.value;
+      else novos[todos[i]] = r.value;
     });
 
     if (nacional) setBr(nacional);
@@ -85,18 +85,17 @@ export default function Painel() {
     } else setErro("");
 
     if (nacional) {
-      const n = nacional as Resumo;
+      const n: Resumo = nacional;
       const [a, b] = n.cands;
       setHist((h) => {
         if (h.length && h[h.length - 1].hora === n.hora) return h;
         const novo = [...h, { hora: n.hora, pst: n.pst, a: a.pct, b: b.pct, an: a.n, bn: b.n }].slice(-400);
         try {
-          localStorage.setItem(chave, JSON.stringify(novo));
+          localStorage.setItem(`hist-${eleicao}`, JSON.stringify(novo));
         } catch {}
         return novo;
       });
     }
-
   }, []);
 
   useAtualizacao(atualizar);
@@ -109,7 +108,6 @@ export default function Painel() {
   const a = br?.cands[0]?.n ?? "";
   const b = br?.cands[1]?.n ?? "";
 
-  // replay: monta Brasil e estados no formato do dado ao vivo a partir da foto escolhida
   const fotos = historico?.fotos ?? [];
   const foto = indice !== null ? fotos[indice] : undefined;
   const vendo = useMemo(() => {
@@ -132,7 +130,7 @@ export default function Painel() {
     if (ia < 0 || ib < 0) return hist;
     return historico.fotos.map((f) => {
       const [st, ts, vv] = f.br;
-      const v = (i: number) => (vv ? (f.br[9 + i] / vv) * 100 : 0);
+      const v = (i: number) => (vv ? (f.br[N_CAMPOS + i] / vv) * 100 : 0);
       return { hora: horaBrasilia(f.momento), pst: ts ? (st / ts) * 100 : 0, a: v(ia), b: v(ib), an: ca.n, bn: cb.n };
     });
   }, [historico, hist, br]);
@@ -154,7 +152,6 @@ export default function Painel() {
         <Carregando />
       ) : (
         <div className="entra flex flex-col gap-4 sm:gap-5">
-          {/* painel: no desktop grande vira 3 colunas numa tela só, cada coluna rola sozinha */}
           <div className="grid grid-cols-1 gap-4 sm:gap-5 xl:h-[calc(100vh-57px-32px)] xl:grid-cols-[360px_minmax(0,1fr)_360px] xl:gap-4">
             <div className="flex min-h-0 flex-col gap-4 sm:gap-5 xl:gap-4 xl:overflow-y-auto xl:pr-1 rolagem">
               <Manchete br={brVer!} />

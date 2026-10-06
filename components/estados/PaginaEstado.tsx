@@ -2,19 +2,20 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState } from "react";
-import { NOMES, REGIAO_DE, REGIOES } from "@/lib/brasil";
+import { useCallback, useEffect, useState } from "react";
+import { NOMES, REGIAO_DE, UFS_ESTADOS } from "@/lib/brasil";
+import { SemArquivo } from "@/lib/arquivo";
 import { CARGOS, baixarCargo, cargosDaUf, situacaoGovernador, type CodCargo, type ResultadoCargo } from "@/lib/cargos";
 import { fmt, pct } from "@/lib/format";
 import { useAtualizacao } from "@/lib/auto";
-import { useTurno } from "@/lib/turno";
+import { chaveEleicao, descobrirTurno, useTurno } from "@/lib/turno";
 import Situacao from "./Situacao";
 import { IconeMapa, IconeVoltar } from "../Icones";
 
-const UFS_ESTADOS = Object.values(REGIOES).flat().sort((a, b) => NOMES[a].localeCompare(NOMES[b], "pt-BR"));
+const UFS_POR_NOME = [...UFS_ESTADOS].sort((a, b) => NOMES[a].localeCompare(NOMES[b], "pt-BR"));
 
 export default function PaginaEstado({ uf }: { uf: string }) {
-  const { ano } = useTurno();
+  const { ano, turno } = useTurno();
   const router = useRouter();
   const params = useSearchParams();
   const cargos = cargosDaUf(uf);
@@ -24,16 +25,21 @@ export default function PaginaEstado({ uf }: { uf: string }) {
   const [res, setRes] = useState<Partial<Record<CodCargo, ResultadoCargo>>>({});
   const [erro, setErro] = useState("");
 
+  useEffect(() => setRes({}), [ano, turno]);
+
   const atualizar = useCallback(async () => {
+    await descobrirTurno();
+    const alvo = chaveEleicao();
     try {
       const r = await baixarCargo(uf, cargo);
+      if (chaveEleicao() !== alvo) return;
       setRes((antigo) => ({ ...antigo, [cargo]: r }));
       setErro("");
     } catch (e) {
       setErro(
-        e instanceof Error && e.message === "sem dados"
+        e instanceof SemArquivo
           ? "O TSE ainda não publicou esse cargo pra esse estado."
-          : "Não consegui falar com o TSE agora. Vou tentar de novo sozinho na próxima atualização."
+          : "Não consegui falar com o TSE agora. Vou tentar de novo sozinho na próxima atualização.",
       );
     }
   }, [uf, cargo]);
@@ -42,7 +48,9 @@ export default function PaginaEstado({ uf }: { uf: string }) {
   const r = res[cargo];
 
   function trocarCargo(c: CodCargo) {
-    router.replace(`/estados/${uf}?cargo=${c}`, { scroll: false });
+    const q = new URLSearchParams(params);
+    q.set("cargo", c);
+    router.replace(`/estados/${uf}?${q}`, { scroll: false });
   }
 
   return (
@@ -57,25 +65,29 @@ export default function PaginaEstado({ uf }: { uf: string }) {
 
       <header className="mb-6 mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="kicker mb-2">{REGIAO_DE[uf]} · Eleições {ano}</p>
+          <p className="kicker mb-2">
+            {REGIAO_DE[uf]} · Eleições {ano}
+          </p>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">{NOMES[uf]}</h1>
+            <h1 className="text-[28px] font-extrabold leading-[1.05] tracking-[-0.035em] sm:text-[36px]">
+              {NOMES[uf]}
+            </h1>
             <label className="relative inline-flex items-center">
               <span className="pointer-events-none absolute left-3 text-ink3">
                 <IconeMapa />
               </span>
-            <select
-              className="btn !pl-9"
-              value={uf}
-              onChange={(e) => router.push(`/estados/${e.target.value}?cargo=${cargo}`)}
-              aria-label="Trocar de estado"
-            >
-              {UFS_ESTADOS.map((u) => (
-                <option key={u} value={u}>
-                  {NOMES[u]}
-                </option>
-              ))}
-            </select>
+              <select
+                className="btn !pl-9"
+                value={uf}
+                onChange={(e) => router.push(`/estados/${e.target.value}?cargo=${cargo}`)}
+                aria-label="Trocar de estado"
+              >
+                {UFS_POR_NOME.map((u) => (
+                  <option key={u} value={u}>
+                    {NOMES[u]}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
           {r && (
@@ -193,20 +205,13 @@ function Proporcional({ r }: { r: ResultadoCargo }) {
   const maiorGrupo = r.grupos[0]?.votos || 1;
   const eleitos = r.cands.filter((c) => c.eleito).length;
 
-  const termo = busca
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+  const termo = busca.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const filtrados = r.cands
     .map((c, i) => ({ ...c, pos: i + 1 }))
     .filter((c) =>
       !termo
         ? true
-        : (c.nome + " " + c.partido + " " + c.n)
-            .normalize("NFD")
-            .replace(/[̀-ͯ]/g, "")
-            .toLowerCase()
-            .includes(termo)
+        : (c.nome + " " + c.partido + " " + c.n).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes(termo),
     );
 
   return (
@@ -244,7 +249,9 @@ function Proporcional({ r }: { r: ResultadoCargo }) {
           Votos por partido / federação
         </h2>
         <p className="mt-1 text-[13px] text-ink2">
-          {temVagas ? "Cadeiras conforme o TSE vai definindo." : "As cadeiras aparecem aqui quando o TSE começar a definir."}
+          {temVagas
+            ? "Cadeiras conforme o TSE vai definindo."
+            : "As cadeiras aparecem aqui quando o TSE começar a definir."}
         </p>
         <ul className="num mt-3">
           {r.grupos
@@ -260,7 +267,10 @@ function Proporcional({ r }: { r: ResultadoCargo }) {
                   {temVagas && <b className="ml-3 inline-block w-14 text-right">{g.vagas} cad.</b>}
                 </span>
                 <span className="col-span-2 mt-1 block h-1.5 overflow-hidden rounded-full bg-empty">
-                  <span className="barra block h-full rounded-full bg-ink2" style={{ width: `${(g.votos / maiorGrupo) * 100}%` }} />
+                  <span
+                    className="barra block h-full rounded-full bg-ink2"
+                    style={{ width: `${(g.votos / maiorGrupo) * 100}%` }}
+                  />
                 </span>
               </li>
             ))}

@@ -116,12 +116,15 @@ body {
   background: var(--card);
   color: var(--ink);
   font-size: 13px;
-  transition: border-color 0.15s ease-out, background 0.15s ease-out;
+  transition:
+    border-color 0.15s ease-out,
+    background 0.15s ease-out;
 }
 .btn:hover {
   border-color: var(--ink3);
 }
-.btn[aria-pressed="true"] {
+.btn[aria-pressed="true"],
+.btn.ativo {
   background: var(--ink);
   color: var(--bg);
   border-color: var(--ink);
@@ -133,6 +136,12 @@ body {
   border-radius: 6px;
 }
 
+/* select invisível por cima de um botão: o foco aparece no botão */
+label:has(> select:focus-visible) {
+  outline: 2px solid var(--c22);
+  outline-offset: 2px;
+}
+
 .skel {
   background: linear-gradient(90deg, var(--empty) 0%, var(--line) 50%, var(--empty) 100%);
   background-size: 200% 100%;
@@ -140,25 +149,41 @@ body {
   border-radius: 8px;
 }
 @keyframes skel {
-  from { background-position: 200% 0; }
-  to { background-position: -200% 0; }
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
 }
 
 .pulso {
   animation: pulso 2s infinite;
 }
 @keyframes pulso {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); }
-  70% { box-shadow: 0 0 0 7px transparent; }
-  100% { box-shadow: 0 0 0 0 transparent; }
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
 }
 
 .entra {
   animation: entra 0.25s ease-out both;
 }
 @keyframes entra {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .barra {
@@ -166,7 +191,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation: none !important;
     transition: none !important;
   }

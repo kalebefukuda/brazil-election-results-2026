@@ -18,7 +18,9 @@ export default function Nav() {
   // só presidente e governador têm 2º turno
   const comTurno = path === "/" || path.startsWith("/estados");
   const passado = turno.ano !== ANO_ATUAL;
-  // links levam o ano/turno escolhido junto, pra URL sempre mostrar o que está na tela
+  // página sem dados (créditos): só o tema
+  const estatica = path === "/creditos";
+  // links levam o ano/turno junto, pra URL mostrar o que está na tela
   const q = new URLSearchParams();
   if (passado) q.set("ano", String(turno.ano));
   if (turno.escolhido) q.set("turno", String(turno.escolhido));
@@ -45,7 +47,6 @@ export default function Nav() {
     { href: "/deputados", txt: "Deputados", ativo: path === "/deputados" },
   ];
 
-  // no celular o texto fica mais curto pra caber tudo numa linha
   let status = "conectando…";
   let statusCurto = "…";
   if (auto.atualizando) {
@@ -60,15 +61,21 @@ export default function Nav() {
   }
 
   const botaoTema = (
-    <button className="btn !min-h-[34px] !px-2.5" onClick={trocarTema} aria-label="Trocar tema claro/escuro" title="Tema">
+    <button
+      className="btn !min-h-[34px] !px-2.5"
+      onClick={trocarTema}
+      aria-label="Trocar tema claro/escuro"
+      title="Tema"
+    >
       {tema === "dark" ? "☀" : "☾"}
     </button>
   );
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-[color-mix(in_srgb,var(--bg)_90%,transparent)] backdrop-blur">
-      <div className={`mx-auto flex ${larguraPagina(path)} flex-col px-4 sm:px-6 lg:h-[56px] lg:flex-row lg:items-center lg:gap-4`}>
-        {/* linha 1: navegação */}
+      <div
+        className={`mx-auto flex ${larguraPagina(path)} flex-col px-4 sm:px-6 lg:h-[56px] lg:flex-row lg:items-center lg:gap-4`}
+      >
         <div className="flex h-[48px] items-center gap-1 lg:h-auto">
           <nav className="flex min-w-0 gap-1 overflow-x-auto" aria-label="Seções">
             {links.map((l) => (
@@ -86,97 +93,111 @@ export default function Nav() {
           </nav>
         </div>
 
-        {/* linha 2 (no celular) / direita (no desktop): ao vivo + controles */}
-        <div className="flex h-[44px] items-center gap-1.5 overflow-x-auto lg:ml-auto lg:h-auto">
-          <Seletor
-            rotulo="Ano da eleição"
-            valor={turno.ano}
-            opcoes={ANOS.map((a) => [a, String(a)])}
-            onMudar={(a) => {
-              escolherAno(Number(a) as Ano);
-              auto.agora();
-            }}
-            className="num font-semibold"
-          />
-          {comTurno && (
-            <div className="inline-flex h-[34px] flex-none rounded-full border border-line p-0.5" role="group" aria-label="Turno">
-              {([1, 2] as const).map((t) => {
-                const bloqueado = t === 2 && !passado && !turno.tem2;
-                return (
-                  <button
-                    key={t}
-                    className={`whitespace-nowrap rounded-full px-3 text-[12px] font-medium transition-colors ${
-                      turno.turno === t ? "bg-ink text-bg" : "text-ink2 hover:text-ink"
-                    } disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink2`}
-                    aria-pressed={turno.turno === t}
-                    disabled={bloqueado}
-                    title={bloqueado ? "O 2º turno é em 25/10. Aparece aqui quando o TSE publicar os primeiros dados." : undefined}
-                    onClick={() => {
-                      if (turno.turno === t) return;
-                      escolherTurno(t);
-                      auto.agora();
-                    }}
-                  >
-                    {t}º turno
-                  </button>
-                );
-              })}
-            </div>
+        {/* no celular os controles quebram linha em vez de sair da tela */}
+        <div className="flex flex-wrap items-center gap-1.5 pb-2.5 lg:ml-auto lg:flex-nowrap lg:pb-0">
+          {estatica ? (
+            botaoTema
+          ) : (
+            <>
+              <Seletor
+                rotulo="Ano da eleição"
+                valor={turno.ano}
+                opcoes={ANOS.map((a) => [a, String(a)])}
+                onMudar={(a) => {
+                  escolherAno(Number(a) as Ano);
+                  auto.agora();
+                }}
+                className="num font-semibold"
+              />
+              {comTurno && (
+                <div
+                  className="inline-flex h-[34px] flex-none rounded-full border border-line p-0.5"
+                  role="group"
+                  aria-label="Turno"
+                >
+                  {([1, 2] as const).map((t) => {
+                    const bloqueado = t === 2 && !passado && !turno.tem2;
+                    return (
+                      <button
+                        key={t}
+                        className={`whitespace-nowrap rounded-full px-3 text-[12px] font-medium transition-colors ${
+                          turno.turno === t ? "bg-ink text-bg" : "text-ink2 hover:text-ink"
+                        } disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink2`}
+                        aria-pressed={turno.turno === t}
+                        disabled={bloqueado}
+                        title={
+                          bloqueado
+                            ? "O 2º turno é em 25/10. Aparece aqui quando o TSE publicar os primeiros dados."
+                            : undefined
+                        }
+                        onClick={() => {
+                          if (turno.turno === t) return;
+                          escolherTurno(t);
+                          auto.agora();
+                        }}
+                      >
+                        {t}º turno
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {online !== null && (
+                <span
+                  className="num inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full border border-line px-3 text-[12px] text-ink2"
+                  title="Pessoas com o site aberto agora"
+                >
+                  <IconePessoas className="h-3.5 w-3.5" />
+                  <b className="font-semibold text-ink">{online.toLocaleString("pt-BR")}</b>
+                  <span className="hidden sm:inline">online</span>
+                </span>
+              )}
+              <span
+                className="num inline-flex h-[34px] items-center gap-2 whitespace-nowrap rounded-full border border-line px-3 text-[12px] text-ink2 sm:min-w-[128px]"
+                aria-live="polite"
+                title={auto.ultima ? `Última atualização às ${auto.ultima}` : undefined}
+              >
+                <span
+                  className={`h-2 w-2 flex-none rounded-full ${auto.rodando && !passado ? "pulso" : ""}`}
+                  style={{ background: auto.rodando && !passado ? "var(--ok)" : "var(--ink3)" }}
+                />
+                <span className="sm:hidden">{statusCurto}</span>
+                <span className="hidden sm:inline">{status}</span>
+              </span>
+              {/* ano passado: intervalo e pausa somem mas guardam o lugar, pra nada pular */}
+              <div className={`flex items-center gap-1.5 ${passado ? "invisible" : ""}`} aria-hidden={passado}>
+                <Seletor
+                  rotulo="Intervalo de atualização"
+                  valor={auto.intervalo}
+                  opcoes={[
+                    [60, "1 min"],
+                    [120, "2 min"],
+                    [300, "5 min"],
+                  ]}
+                  onMudar={(v) => auto.setIntervalo(Number(v))}
+                  desligado={passado}
+                />
+                <button
+                  className="btn !min-h-[34px] !px-2.5"
+                  onClick={auto.pausar}
+                  aria-label={auto.rodando ? "Pausar atualização" : "Retomar atualização"}
+                  title={auto.rodando ? "Pausar" : "Retomar"}
+                  disabled={passado}
+                  tabIndex={passado ? -1 : undefined}
+                >
+                  {auto.rodando ? <IconePausa /> : <IconePlay />}
+                </button>
+              </div>
+              {botaoTema}
+            </>
           )}
-          {online !== null && (
-            <span
-              className="num inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full border border-line px-3 text-[12px] text-ink2"
-              title="Pessoas com o site aberto agora"
-            >
-              <IconePessoas className="h-3.5 w-3.5" />
-              <b className="font-semibold text-ink">{online.toLocaleString("pt-BR")}</b>
-              <span className="hidden sm:inline">online</span>
-            </span>
-          )}
-          <span
-            className="num inline-flex h-[34px] items-center gap-2 whitespace-nowrap rounded-full border border-line px-3 text-[12px] text-ink2 sm:min-w-[128px]"
-            aria-live="polite"
-            title={auto.ultima ? `Última atualização às ${auto.ultima}` : undefined}
-          >
-            <span
-              className={`h-2 w-2 flex-none rounded-full ${auto.rodando && !passado ? "pulso" : ""}`}
-              style={{ background: auto.rodando && !passado ? "var(--ok)" : "var(--ink3)" }}
-            />
-            <span className="sm:hidden">{statusCurto}</span>
-            <span className="hidden sm:inline">{status}</span>
-          </span>
-          {/* ano passado não muda: intervalo e pausa somem, mas guardam o lugar pra nada pular */}
-          <div className={`flex items-center gap-1.5 ${passado ? "invisible" : ""}`} aria-hidden={passado}>
-            <Seletor
-              rotulo="Intervalo de atualização"
-              valor={auto.intervalo}
-              opcoes={[
-                [60, "1 min"],
-                [120, "2 min"],
-                [300, "5 min"],
-              ]}
-              onMudar={(v) => auto.setIntervalo(Number(v))}
-              desligado={passado}
-            />
-            <button
-              className="btn !min-h-[34px] !px-2.5"
-              onClick={auto.pausar}
-              aria-label={auto.rodando ? "Pausar atualização" : "Retomar atualização"}
-              title={auto.rodando ? "Pausar" : "Retomar"}
-              disabled={passado}
-              tabIndex={passado ? -1 : undefined}
-            >
-              {auto.rodando ? <IconePausa /> : <IconePlay />}
-            </button>
-          </div>
-          {botaoTema}
         </div>
       </div>
     </header>
   );
 }
 
-// select com cara de botão: o texto e a setinha são desenhados, o select de verdade fica invisível por cima
+// select invisível por cima de um botão desenhado (texto + setinha)
 function Seletor({
   rotulo,
   valor,
@@ -194,10 +215,19 @@ function Seletor({
 }) {
   const atual = opcoes.find(([v]) => v === valor)?.[1] ?? "";
   return (
-    <label className={`btn relative inline-flex !min-h-[34px] flex-none items-center gap-2 !pl-3 !pr-2.5 !text-[12px] ${className}`}>
+    <label
+      className={`btn relative inline-flex !min-h-[34px] flex-none items-center gap-2 !pl-3 !pr-2.5 !text-[12px] ${className}`}
+    >
       {atual}
       <svg viewBox="0 0 12 12" className="h-3 w-3 text-ink3" aria-hidden>
-        <path d="M3 4.5 6 7.5l3-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M3 4.5 6 7.5l3-3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
       <select
         aria-label={rotulo}

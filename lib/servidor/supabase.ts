@@ -1,7 +1,5 @@
 // Supabase pelo REST, sem SDK. Leitura usa a chave pública (as tabelas têm RLS de leitura);
 // a service role só escreve e nunca vai pro navegador.
-import { timingSafeEqual } from "node:crypto";
-
 const URL_SB = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const PUBLICA = process.env.NEXT_PUBLIC_SUPABASE_KEY;
 const SECRETA = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -39,13 +37,4 @@ export async function gravar(
     body: JSON.stringify(linhas),
   });
   if (!r.ok) throw new Error(`Supabase ${tabela}: HTTP ${r.status} ${await r.text()}`);
-}
-
-export function autorizado(req: Request) {
-  const segredo = process.env.COLETOR_SEGREDO;
-  const veio = req.headers.get("x-coletor-segredo");
-  if (!segredo || segredo.length < 24 || !veio) return false;
-  const a = Buffer.from(veio);
-  const b = Buffer.from(segredo);
-  return a.length === b.length && timingSafeEqual(a, b);
 }

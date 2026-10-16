@@ -6,7 +6,7 @@ import { NOMES, UFS_ESTADOS } from "@/lib/brasil";
 import { baixarCargo, somaApuracao, type ResultadoCargo } from "@/lib/cargos";
 import { campo, corPartido, type Campo } from "@/lib/partidos";
 import { fmt, pct } from "@/lib/format";
-import { useAtualizacao } from "@/lib/auto";
+import { useAtualizacao, useCargaUnica } from "@/lib/auto";
 import { chaveEleicao, descobrirTurno, useTurno } from "@/lib/turno";
 import Hemiciclo, { type Cadeira } from "../Hemiciclo";
 import BarraCampos from "../BarraCampos";
@@ -14,6 +14,7 @@ import Apurado from "../Apurado";
 
 export default function PaginaDeputados() {
   const { ano } = useTurno();
+  const carga = useCargaUnica();
   const [dados, setDados] = useState<Record<string, ResultadoCargo>>({});
   const [erro, setErro] = useState("");
 
@@ -22,6 +23,7 @@ export default function PaginaDeputados() {
   const atualizar = useCallback(async () => {
     await descobrirTurno();
     const alvo = chaveEleicao();
+    if (carga.pular(alvo)) return;
     const res = await Promise.allSettled(UFS_ESTADOS.map((uf) => baixarCargo(uf, "6")));
     if (chaveEleicao() !== alvo) return;
     let falhas = 0;
@@ -34,7 +36,11 @@ export default function PaginaDeputados() {
       return novo;
     });
     setErro(falhas === UFS_ESTADOS.length ? "Não consegui falar com o TSE agora. Vou tentar de novo sozinho." : "");
-  }, []);
+    carga.concluir(
+      alvo,
+      res.every((r) => r.status === "fulfilled" && r.value.final),
+    );
+  }, [carga]);
 
   useAtualizacao(atualizar);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useAtualizacao } from "@/lib/auto";
+import { useAtualizacao, useCargaUnica } from "@/lib/auto";
 import { NOMES, UFS } from "@/lib/brasil";
 import { baixar, type Resumo } from "@/lib/tse";
 import { ANO_ATUAL, codigos, ehPassada } from "@/lib/eleicao";
@@ -34,6 +34,7 @@ export default function Painel() {
   const vista = useTurno();
   const passado = vista.ano !== ANO_ATUAL;
   const eleicaoVista = codigos(vista.ano, vista.turno).presidente;
+  const carga = useCargaUnica();
 
   // trocou de eleição: nada da anterior pode ficar na tela
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function Painel() {
   const atualizar = useCallback(async () => {
     const { ano, turno } = await descobrirTurno();
     const alvo = chaveEleicao();
+    if (carga.pular(alvo)) return;
     const eleicao = codigos(ano, turno).presidente;
     const todos = ["br", ...UFS];
     const [res, hist] = await Promise.all([
@@ -68,14 +70,13 @@ export default function Painel() {
     if (hist) setHistorico(hist);
     const novos: Dados = {};
     const falhas: string[] = [];
-    let nacional: Resumo | null = null;
     res.forEach((r, i) => {
       if (r.status === "rejected") falhas.push(todos[i].toUpperCase());
-      else if (todos[i] === "br") nacional = r.value;
-      else novos[todos[i]] = r.value;
+      else if (i > 0) novos[todos[i]] = r.value;
     });
+    const n = res[0].status === "fulfilled" ? res[0].value : null;
 
-    if (nacional) setBr(nacional);
+    if (n) setBr(n);
     setDados((antigos) => ({ ...antigos, ...novos }));
 
     if (falhas.length === todos.length) {
@@ -84,8 +85,8 @@ export default function Painel() {
       setErro(`Alguns estados não vieram (${falhas.join(", ")}). Mostrando o último dado deles.`);
     } else setErro("");
 
-    if (nacional) {
-      const n: Resumo = nacional;
+    carga.concluir(alvo, Boolean(n?.final) && falhas.length === 0);
+    if (n) {
       const [a, b] = n.cands;
       setHist((h) => {
         if (h.length && h[h.length - 1].hora === n.hora) return h;
@@ -96,7 +97,7 @@ export default function Painel() {
         return novo;
       });
     }
-  }, []);
+  }, [carga]);
 
   useAtualizacao(atualizar);
 

@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { NOMES, REGIAO_DE, REGIOES, UFS_ESTADOS } from "@/lib/brasil";
 import { baixarCargo, situacaoGovernador, somaApuracao, type ResultadoCargo } from "@/lib/cargos";
 import { pct } from "@/lib/format";
-import { useAtualizacao } from "@/lib/auto";
+import { useAtualizacao, useCargaUnica } from "@/lib/auto";
 import { chaveEleicao, descobrirTurno, useTurno } from "@/lib/turno";
 import Situacao from "./Situacao";
 import MapaSelecao from "./MapaSelecao";
@@ -23,6 +23,7 @@ type PorUf = Record<string, { gov?: ResultadoCargo; sen?: ResultadoCargo }>;
 
 export default function VisaoEstados() {
   const { ano, turno } = useTurno();
+  const carga = useCargaUnica();
   const [dados, setDados] = useState<PorUf>({});
   const [erro, setErro] = useState("");
   const [regiao, setRegiao] = useState("Todas");
@@ -34,6 +35,7 @@ export default function VisaoEstados() {
   const atualizar = useCallback(async () => {
     await descobrirTurno();
     const alvo = chaveEleicao();
+    if (carga.pular(alvo)) return;
     const pedidos = UFS_ESTADOS.flatMap((uf) => [
       baixarCargo(uf, "3").then((r) => ({ uf, tipo: "gov" as const, r })),
       baixarCargo(uf, "5").then((r) => ({ uf, tipo: "sen" as const, r })),
@@ -57,7 +59,11 @@ export default function VisaoEstados() {
           ? "Alguns estados não vieram nessa rodada; mostrando o último dado deles."
           : "",
     );
-  }, []);
+    carga.concluir(
+      alvo,
+      res.every((r) => r.status === "fulfilled" && r.value.r.final),
+    );
+  }, [carga]);
 
   useAtualizacao(atualizar);
 

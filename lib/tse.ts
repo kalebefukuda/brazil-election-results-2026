@@ -23,6 +23,7 @@ export type Resumo = {
   st: number; // seções totalizadas
   pst: number; // % apurado
   definido: string; // "e" eleito, "s" 2º turno garantido, "n" aberto
+  final: boolean; // TSE terminou de totalizar (and = "f")
   te: number; // eleitorado
   comp: number; // comparecimento (nas seções apuradas)
   abst: number;
@@ -60,6 +61,7 @@ export function parse(uf: string, j: ArquivoTSE): Resumo {
     st,
     pst: ts ? (st / ts) * 100 : 0,
     definido: definido(j.md, cands),
+    final: j.and === "f",
     te: int(j.e?.te),
     comp: int(j.e?.c),
     abst: int(j.e?.a),

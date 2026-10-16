@@ -7,7 +7,7 @@ import { NOMES, REGIAO_DE, UFS_ESTADOS } from "@/lib/brasil";
 import { SemArquivo } from "@/lib/arquivo";
 import { CARGOS, baixarCargo, cargosDaUf, situacaoGovernador, type CodCargo, type ResultadoCargo } from "@/lib/cargos";
 import { fmt, pct } from "@/lib/format";
-import { useAtualizacao } from "@/lib/auto";
+import { useAtualizacao, useCargaUnica } from "@/lib/auto";
 import { chaveEleicao, descobrirTurno, useTurno } from "@/lib/turno";
 import Situacao from "./Situacao";
 import Escolha from "../ui/Escolha";
@@ -17,6 +17,7 @@ const UFS_POR_NOME = [...UFS_ESTADOS].sort((a, b) => NOMES[a].localeCompare(NOME
 
 export default function PaginaEstado({ uf }: { uf: string }) {
   const { ano, turno } = useTurno();
+  const carga = useCargaUnica();
   const router = useRouter();
   const params = useSearchParams();
   const cargos = cargosDaUf(uf);
@@ -31,11 +32,14 @@ export default function PaginaEstado({ uf }: { uf: string }) {
   const atualizar = useCallback(async () => {
     await descobrirTurno();
     const alvo = chaveEleicao();
+    const chave = `${alvo}-${uf}-${cargo}`;
+    if (carga.pular(chave)) return;
     try {
       const r = await baixarCargo(uf, cargo);
       if (chaveEleicao() !== alvo) return;
       setRes((antigo) => ({ ...antigo, [cargo]: r }));
       setErro("");
+      carga.concluir(chave, r.final);
     } catch (e) {
       setErro(
         e instanceof SemArquivo
@@ -43,7 +47,7 @@ export default function PaginaEstado({ uf }: { uf: string }) {
           : "Não consegui falar com o TSE agora. Vou tentar de novo sozinho na próxima atualização.",
       );
     }
-  }, [uf, cargo]);
+  }, [uf, cargo, carga]);
 
   useAtualizacao(atualizar);
   const r = res[cargo];

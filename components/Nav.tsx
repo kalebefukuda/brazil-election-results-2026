@@ -19,6 +19,8 @@ export default function Nav() {
   // só presidente e governador têm 2º turno
   const comTurno = path === "/" || path.startsWith("/estados");
   const passado = turno.ano !== ANO_ATUAL;
+  // sem "ao vivo" quando é ano passado ou quando a página já carregou o resultado final
+  const semAoVivo = passado || auto.final;
   // página sem dados (créditos): só o tema
   const estatica = path === "/creditos";
   // links levam o ano/turno junto, pra URL mostrar o que está na tela
@@ -53,7 +55,7 @@ export default function Nav() {
   if (auto.atualizando) {
     status = "atualizando…";
     statusCurto = "…";
-  } else if (passado && auto.ultima) {
+  } else if (semAoVivo && auto.ultima) {
     status = "resultado final";
     statusCurto = "final";
   } else if (auto.ultima) {
@@ -159,14 +161,14 @@ export default function Nav() {
                 title={auto.ultima ? `Última atualização às ${auto.ultima}` : undefined}
               >
                 <span
-                  className={`h-2 w-2 flex-none rounded-full ${auto.rodando && !passado ? "pulso" : ""}`}
-                  style={{ background: auto.rodando && !passado ? "var(--ok)" : "var(--ink3)" }}
+                  className={`h-2 w-2 flex-none rounded-full ${auto.rodando && !semAoVivo ? "pulso" : ""}`}
+                  style={{ background: auto.rodando && !semAoVivo ? "var(--ok)" : "var(--ink3)" }}
                 />
                 <span className="sm:hidden">{statusCurto}</span>
                 <span className="hidden sm:inline">{status}</span>
               </span>
-              {/* ano passado: intervalo e pausa somem mas guardam o lugar, pra nada pular */}
-              <div className={`flex items-center gap-1.5 ${passado ? "invisible" : ""}`} aria-hidden={passado}>
+              {/* sem "ao vivo": intervalo e pausa somem mas guardam o lugar, pra nada pular */}
+              <div className={`flex items-center gap-1.5 ${semAoVivo ? "invisible" : ""}`} aria-hidden={semAoVivo}>
                 <Escolha
                   rotulo="Intervalo de atualização"
                   valor={String(auto.intervalo)}
@@ -177,15 +179,15 @@ export default function Nav() {
                   ]}
                   alinhar="direita"
                   onMudar={(v) => auto.setIntervalo(Number(v))}
-                  desligado={passado}
+                  desligado={semAoVivo}
                 />
                 <button
                   className="btn !min-h-[34px] !px-2.5"
                   onClick={auto.pausar}
                   aria-label={auto.rodando ? "Pausar atualização" : "Retomar atualização"}
                   title={auto.rodando ? "Pausar" : "Retomar"}
-                  disabled={passado}
-                  tabIndex={passado ? -1 : undefined}
+                  disabled={semAoVivo}
+                  tabIndex={semAoVivo ? -1 : undefined}
                 >
                   {auto.rodando ? <IconePausa /> : <IconePlay />}
                 </button>

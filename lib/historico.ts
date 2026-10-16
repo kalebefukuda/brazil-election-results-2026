@@ -60,6 +60,7 @@ export function fotoParaResumo(uf: string, v: number[], cands: string[], momento
     st,
     pst: ts ? (st / ts) * 100 : 0,
     definido: "n",
+    final: false,
     te: vivo.te,
     comp: cp,
     abst: ab,

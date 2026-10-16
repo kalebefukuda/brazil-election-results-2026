@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 // atualização automática global: o header controla, a página atual registra o que atualizar
 type Auto = {
@@ -9,6 +9,8 @@ type Auto = {
   falta: number;
   atualizando: boolean;
   ultima: string;
+  final: boolean; // a página já tem o resultado final: nada mais a buscar
+  setFinal: (f: boolean) => void;
   setIntervalo: (s: number) => void;
   pausar: () => void;
   agora: () => void;
@@ -23,6 +25,7 @@ export function AutoProvider({ children }: { children: React.ReactNode }) {
   const [falta, setFalta] = useState(60);
   const [atualizando, setAtualizando] = useState(false);
   const [ultima, setUltima] = useState("");
+  const [final, setFinal] = useState(false);
   const fnRef = useRef<(() => Promise<void>) | null>(null);
   const ultimaVez = useRef(0);
   const intervaloRef = useRef(intervalo);
@@ -44,6 +47,7 @@ export function AutoProvider({ children }: { children: React.ReactNode }) {
   const registrar = useCallback(
     (fn: (() => Promise<void>) | null) => {
       fnRef.current = fn;
+      setFinal(false);
       if (fn) agora();
     },
     [agora],
@@ -80,6 +84,8 @@ export function AutoProvider({ children }: { children: React.ReactNode }) {
         falta,
         atualizando,
         ultima,
+        final,
+        setFinal,
         setIntervalo,
         pausar: () => setRodando((r) => !r),
         agora,
@@ -103,4 +109,24 @@ export function useAtualizacao(fn: () => Promise<void>) {
     registrar(fn);
     return () => registrar(null);
   }, [fn, registrar]);
+}
+
+// resultado final não muda: depois de carregado uma vez, as próximas rodadas não buscam nada
+export function useCargaUnica() {
+  const { setFinal } = useAuto();
+  const finalDe = useRef<string | null>(null);
+  return useMemo(
+    () => ({
+      pular(chave: string) {
+        if (finalDe.current !== chave) return false;
+        setFinal(true);
+        return true;
+      },
+      concluir(chave: string, fechado: boolean) {
+        finalDe.current = fechado ? chave : null;
+        setFinal(fechado);
+      },
+    }),
+    [setFinal],
+  );
 }

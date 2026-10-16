@@ -36,7 +36,7 @@ flowchart LR
   IBGE[(IBGE<br/>malha municipal)]
 
   TSE -- "Brasil e estados<br/>(navegador, a cada 1 min)" --> Site
-  TSE -- "pg_cron: fotos a cada 1 min,<br/>municípios a cada 5 min" --> Coletor[/api/coletar/] --> DB[(Supabase)]
+  TSE -- "pg_cron, só na noite da apuração:<br/>fotos a cada 2 min, municípios a cada 5 min" --> Coletor[/api/coletar/] --> DB[(Supabase)]
   DB -- "linha do tempo, feed,<br/>municípios" --> Site
   CSV -- scripts/historico.mjs --> Hist[public/historico<br/>2022 e 2018] --> Site
   IBGE -- scripts/malha.mjs --> Malha[public/malha] --> Site
@@ -44,7 +44,7 @@ flowchart LR
 
 - **Brasil e estados:** o navegador de cada visitante lê direto do TSE. Se não conseguir, usa a rota `/api/tse`, com cache de 15s na Vercel.
 - **Municípios, linha do tempo e feed:** um coletor roda no servidor, chamado pelo `pg_cron` do Supabase, e grava no banco. O visitante só lê essa cópia, e por isso o tráfego no TSE não cresce com a audiência.
-- **Limite do TSE:** ele bloqueia por 10 min quem passa de 100 req/s. O coletor tem freio (25 req/s), para no primeiro bloqueio e não baixa de novo o município que já terminou de apurar.
+- **Limite do TSE:** ele bloqueia por 10 min quem passa de 100 req/s. O coletor tem freio (25 req/s), para no primeiro bloqueio, pergunta antes se o arquivo mudou (ETag, resposta 304 sem corpo) e só baixa as cidades dos estados que avançaram e que ainda não terminaram de apurar.
 - **2022 e 2018:** vêm dos CSVs do Portal de Dados Abertos do TSE. São convertidos uma vez para o mesmo formato JSON da divulgação ao vivo, então as telas são as mesmas. Os números foram conferidos com o resultado oficial.
 
 ## Estrutura
@@ -83,16 +83,19 @@ Abre em http://localhost:3000. Sem Supabase configurado, o modo local baixa os m
 
 ### Variáveis de ambiente
 
-| Variável                    | Pra quê                                                         |
-| --------------------------- | --------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`  | URL do projeto Supabase                                         |
-| `NEXT_PUBLIC_SUPABASE_KEY`  | chave pública (publishable/anon): leitura e contador de online  |
-| `SUPABASE_SERVICE_ROLE_KEY` | chave secreta: só o coletor usa, pra gravar                     |
-| `COLETOR_SEGREDO`           | segredo que o `pg_cron` manda no cabeçalho pra chamar o coletor |
+| Variável                    | Pra quê                                                                                        |
+| --------------------------- | ---------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`  | URL do projeto Supabase                                                                        |
+| `NEXT_PUBLIC_SUPABASE_KEY`  | chave pública (publishable/anon): leitura e contador de online                                 |
+| `SUPABASE_SERVICE_ROLE_KEY` | chave secreta: só o coletor usa, pra gravar                                                    |
+| `CRON_SECRET`               | segredo que o `pg_cron` manda em `Authorization: Bearer` pra chamar o coletor (24+ caracteres) |
+| `COLETA_ATIVA`              | `1` liga a coleta; qualquer outro valor faz as rotas de coleta não fazerem nada                |
 
 ### Supabase
 
-Rode no SQL Editor, em ordem, os arquivos de `supabase/migrations/`. Antes, troque `SITE` e `SEGREDO` pela URL do site e pelo valor de `COLETOR_SEGREDO`.
+Rode no SQL Editor, em ordem, os arquivos de `supabase/migrations/`. Antes, troque `SITE` e `SEGREDO` pela URL do site e pelo valor de `CRON_SECRET`.
+
+O agendamento da `003` só dispara na noite do 2º turno (25/10, das 17h à 0h59). Fora disso a coleta fica parada, e mesmo quando roda ela pergunta ao TSE se o arquivo mudou (ETag) antes de baixar qualquer coisa.
 
 ### Scripts
 

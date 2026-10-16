@@ -13,7 +13,7 @@ async function eventosRecentes(eleicao: string) {
   );
 }
 
-function comFoto(h: Historico, f: Linha): Historico {
+export function acrescentarFoto(h: Historico, f: Linha): Historico {
   // candidato novo vai pro fim: as fotos antigas ficam mais curtas e quem lê usa 0
   const cands = [...h.cands];
   for (const n of Object.keys(f.br.c)) if (!cands.includes(n)) cands.push(n);
@@ -35,7 +35,7 @@ async function montar(eleicao: string): Promise<Historico> {
     fotos: [],
     eventos: [],
   };
-  return fotos.reduce(comFoto, vazio);
+  return fotos.reduce(acrescentarFoto, vazio);
 }
 
 export async function publicarHistorico(eleicao: string, nova: Linha) {
@@ -44,7 +44,11 @@ export async function publicarHistorico(eleicao: string, nova: Linha) {
   );
   const base = linha?.valor;
   const mesmo = (m: string) => new Date(m).getTime() === new Date(nova.momento).getTime();
-  const h = !base ? await montar(eleicao) : base.fotos.some((f) => mesmo(f.momento)) ? base : comFoto(base, nova);
+  const h = !base
+    ? await montar(eleicao)
+    : base.fotos.some((f) => mesmo(f.momento))
+      ? base
+      : acrescentarFoto(base, nova);
   h.eventos = await eventosRecentes(eleicao);
   await gravar("apuracao_estado", { chave: chave(eleicao), valor: h }, "chave", "atualiza").catch((e) =>
     console.error("histórico (gravação):", e),

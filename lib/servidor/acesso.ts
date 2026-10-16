@@ -17,7 +17,7 @@ export function autorizado(req: Request) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-// chave geral: fora da apuração a coleta não faz nada, mesmo que algum agendador chame
-export const coletaAtiva = () => process.env.COLETA_ATIVA === "1";
+// chave de emergência: COLETA_ATIVA=0 faz a coleta não fazer nada, mesmo que o agendador chame
+export const coletaAtiva = () => process.env.COLETA_ATIVA !== "0";
 
 export const DESLIGADA = { pulou: "COLETA_ATIVA desligada" };

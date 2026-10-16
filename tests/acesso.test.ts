@@ -29,8 +29,8 @@ test("recusa sem header, com segredo errado ou com segredo curto configurado", (
   assert.equal(autorizado(pedido({ authorization: "Bearer curto" })), false);
 });
 
-test("coleta só fica ligada com COLETA_ATIVA=1", () => {
-  assert.equal(coletaAtiva(), false);
-  process.env.COLETA_ATIVA = "1";
+test("coleta fica ligada por padrão e COLETA_ATIVA=0 desliga", () => {
   assert.equal(coletaAtiva(), true);
+  process.env.COLETA_ATIVA = "0";
+  assert.equal(coletaAtiva(), false);
 });

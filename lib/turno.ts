@@ -3,8 +3,9 @@
 import { useSyncExternalStore } from "react";
 import { baixarArquivo } from "./arquivo";
 import { ANO_ATUAL, ANOS, codigos, ELEICOES, type Ano, type Turno } from "./eleicao";
+import { apuracaoComecou } from "./tse-formato";
 
-// Eleição na tela: em 2026 o 2º turno entra sozinho quando o TSE publica o arquivo nacional;
+// Eleição na tela: em 2026 o 2º turno entra sozinho quando o TSE totaliza a primeira seção dele;
 // anos passados abrem no 2º turno (resultado final). ?ano=&turno= na URL fixa a escolha.
 type Estado = { ano: Ano; turno: Turno; tem2: boolean; escolhido: Turno | null };
 
@@ -43,10 +44,7 @@ function lerUrl() {
 }
 
 async function existe2() {
-  return baixarArquivo(ELEICOES[2].presidente, "br", "0001").then(
-    () => true,
-    () => false,
-  );
+  return baixarArquivo(ELEICOES[2].presidente, "br", "0001").then(apuracaoComecou, () => false);
 }
 
 // muda a cada troca de ano/turno: quem buscou dados de outra eleição descarta a resposta

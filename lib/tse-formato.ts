@@ -18,3 +18,8 @@ export type ArquivoTSE = {
 export function candidatosTSE(j: ArquivoTSE) {
   return j.carg[0].agr.flatMap((a) => a.par.flatMap((p) => p.cand.map((k) => ({ k, p, a }))));
 }
+
+// o TSE publica os arquivos de um turno dias antes, zerados e sem data: só vale quando tem seção totalizada
+export function apuracaoComecou(j: Pick<ArquivoTSE, "dt" | "ht" | "s">) {
+  return Boolean(j.dt && j.ht) && parseInt(j.s?.st ?? "0", 10) > 0;
+}

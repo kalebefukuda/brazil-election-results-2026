@@ -1,6 +1,7 @@
 // Acesso do servidor ao TSE. O TSE bloqueia por 10 min o IP que passa de 100 req/s,
 // então toda coleta passa pelo freio e para de vez no primeiro 403/429.
 import { ELEICOES, TSE_BASE, urlDados, type Turno } from "../eleicao";
+import { apuracaoComecou } from "../tse-formato";
 
 export class Bloqueado extends Error {}
 
@@ -36,8 +37,9 @@ export async function buscarJson<T>(url: string, vez: Vez): Promise<T | null> {
 }
 
 export async function turnoNoServidor(): Promise<Turno> {
-  const r = await fetch(urlDados(ELEICOES[2].presidente, "br", "0001"), { cache: "no-store" });
-  return r.ok ? 2 : 1;
+  const r = await fetch(urlDados(ELEICOES[2].presidente, "br", "0001"), { cache: "no-store" }).catch(() => null);
+  if (!r?.ok) return 1;
+  return apuracaoComecou(await r.json()) ? 2 : 1;
 }
 
 export type MunConfig = { cd: string; cdi: string; nm: string };

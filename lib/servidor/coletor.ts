@@ -4,9 +4,11 @@ import { UFS } from "../brasil";
 import { ELEICOES, definido, urlDados } from "../eleicao";
 import type { Foto } from "../historico";
 import { int, titulo } from "../texto";
-import { candidatosTSE, type ArquivoTSE } from "../tse-formato";
+import { apuracaoComecou, candidatosTSE, type ArquivoTSE } from "../tse-formato";
 import { gravar, ler, podeGravar, podeLer } from "./supabase";
-import { buscarJson, freio, listaMunicipios, momentoTSE, turnoNoServidor, type Vez } from "./tse";
+import { gravarEtags, lerEtags } from "./estado";
+import { publicarHistorico } from "./historico";
+import { buscarJson, buscarSeMudou, freio, listaMunicipios, momentoTSE, turnoNoServidor, type Vez } from "./tse";
 
 export type Evento = {
   eleicao: string;
@@ -45,10 +47,11 @@ function foto(j: ArquivoTSE): Foto {
 const top = (cs: Cand[], vv: number) =>
   cs.slice(0, 2).map((k) => ({ n: k.n, nome: k.nome, partido: k.partido, pct: vv ? (k.votos / vv) * 100 : 0 }));
 
-export async function baixarFotos(eleicao: string, vez: Vez) {
-  const [brJ, ...ufsJ] = await Promise.all(
-    ["br", ...UFS].map((uf) => buscarJson<ArquivoTSE>(urlDados(eleicao, uf, "0001"), vez)),
-  );
+export async function baixarFotos(eleicao: string, vez: Vez, nacional?: ArquivoTSE) {
+  const [brJ, ...ufsJ] = await Promise.all([
+    nacional ?? buscarJson<ArquivoTSE>(urlDados(eleicao, "br", "0001"), vez),
+    ...UFS.map((uf) => buscarJson<ArquivoTSE>(urlDados(eleicao, uf, "0001"), vez)),
+  ]);
   if (!brJ) throw new Error("TSE sem o arquivo nacional");
   const ufs: Record<string, Foto> = {};
   const faltando: string[] = [];
@@ -65,7 +68,18 @@ export async function coletar({ seco }: { seco: boolean }) {
   const { presidente: eleicao, estadual } = ELEICOES[turno];
   const vez = freio(20);
 
-  const { brJ, br, ufs, faltando } = await baixarFotos(eleicao, vez);
+  // o arquivo nacional muda sempre que qualquer seção do país é totalizada: sem mudança, não há o que fazer
+  const chaveBr = `etag-${eleicao}-br`;
+  const nacional = await buscarSeMudou<ArquivoTSE>(
+    urlDados(eleicao, "br", "0001"),
+    seco ? undefined : (await lerEtags(chaveBr)).get(chaveBr),
+    vez,
+  );
+  if (!nacional.mudou) return { turno, eleicao, mudou: false };
+  if (!nacional.json) throw new Error("TSE sem o arquivo nacional");
+  if (!apuracaoComecou(nacional.json)) return { turno, eleicao, mudou: true, pulou: "apuração não começou" };
+
+  const { brJ, br, ufs, faltando } = await baixarFotos(eleicao, vez, nacional.json);
   const momento = momentoTSE(brJ.dt, brJ.ht);
 
   const [ultimo] = podeLer
@@ -126,6 +140,9 @@ export async function coletar({ seco }: { seco: boolean }) {
   const gravou = !seco && podeGravar && novo && completa;
   if (gravou) await gravar("apuracao_snapshot", { eleicao, momento, br, ufs }, "eleicao,momento", "ignora");
   if (!seco && podeGravar && eventos.length) await gravar("apuracao_evento", eventos, "chave", "ignora");
+  if (gravou) await publicarHistorico(eleicao, { momento, br, ufs });
+  // ETag só depois de tudo gravado: se faltou estado ou deu erro, o próximo minuto tenta de novo
+  if (!seco && completa) await gravarEtags({ [chaveBr]: nacional.etag });
 
-  return { turno, eleicao, momento, novo, gravado: gravou, faltando, eventos };
+  return { turno, eleicao, momento, mudou: true, novo, gravado: gravou, faltando, eventos: eventos.length };
 }

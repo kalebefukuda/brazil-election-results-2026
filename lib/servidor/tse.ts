@@ -36,6 +36,25 @@ export async function buscarJson<T>(url: string, vez: Vez): Promise<T | null> {
   return r.ok ? ((await r.json()) as T) : null;
 }
 
+export type Condicional<T> = { mudou: false } | { mudou: true; json: T | null; etag: string | null };
+
+// pede com o ETag da última vez: se o TSE responder 304, nada mudou e nem o corpo vem
+export async function buscarSeMudou<T>(url: string, etag: string | undefined, vez: Vez): Promise<Condicional<T>> {
+  await vez();
+  const r = await fetch(url, {
+    cache: "no-store",
+    headers: etag ? { "If-None-Match": etag } : {},
+    signal: AbortSignal.timeout(15_000),
+  }).catch(() => null);
+  if (r?.status === 304) return { mudou: false };
+  if (r?.status === 403 || r?.status === 429) {
+    vez.parar();
+    throw new Bloqueado(`TSE respondeu ${r.status}`);
+  }
+  if (!r?.ok) return { mudou: true, json: null, etag: null };
+  return { mudou: true, json: (await r.json()) as T, etag: r.headers.get("etag") };
+}
+
 export async function turnoNoServidor(): Promise<Turno> {
   const r = await fetch(urlDados(ELEICOES[2].presidente, "br", "0001"), { cache: "no-store" }).catch(() => null);
   if (!r?.ok) return 1;

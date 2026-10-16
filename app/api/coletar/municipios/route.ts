@@ -1,7 +1,7 @@
 import { UFS_ESTADOS } from "@/lib/brasil";
 import { ELEICOES, urlDados } from "@/lib/eleicao";
 import { autorizado, coletaAtiva, DESLIGADA } from "@/lib/servidor/acesso";
-import { gravarEtags, lerEtags } from "@/lib/servidor/estado";
+import { encerrada, gravarEtags, lerEtags, marcarEncerrada } from "@/lib/servidor/estado";
 import { coletarUf, type MunUfColeta } from "@/lib/servidor/municipios";
 import { gravar, ler, podeGravar } from "@/lib/servidor/supabase";
 import { Bloqueado, buscarSeMudou, freio, listaMunicipios, turnoNoServidor } from "@/lib/servidor/tse";
@@ -17,7 +17,10 @@ export async function GET(req: Request) {
   if (!podeGravar) return Response.json({ erro: "Supabase não configurado" }, { status: 500 });
 
   try {
+    if (await encerrada(`fim-${ELEICOES[2].presidente}-mun`)) return Response.json({ pulou: "apuração encerrada" });
     const eleicao = ELEICOES[await turnoNoServidor()].presidente;
+    const fim = `fim-${eleicao}-mun`;
+    if (await encerrada(fim)) return Response.json({ eleicao, pulou: "apuração encerrada" });
     const vez = freio(25);
     const prefixo = `etag-${eleicao}-mun-`;
     const etags = await lerEtags(prefixo);
@@ -46,17 +49,21 @@ export async function GET(req: Request) {
 
     const novasEtags: Record<string, string | null> = {};
     let baixados = 0;
+    let tudoTerminado = true;
     for (const { uf, r } of mudaram) {
       if (!r.mudou || !listas[uf]) continue;
       const velho = anterior[uf];
       const dados = await coletarUf(eleicao, uf, "0001", listas[uf], vez, velho);
       baixados += listas[uf].length - (velho?.fim.length ?? 0);
+      if (dados.fim.length < listas[uf].length) tudoTerminado = false;
       await gravar("apuracao_municipios", { eleicao, uf, hora: dados.hora, dados }, "eleicao,uf", "atualiza");
       novasEtags[prefixo + uf] = r.etag;
     }
     // o nacional só fica marcado como visto se todas as UFs que mudaram vieram certas; senão a próxima volta repete
     if (mudaram.every((x) => x.r.mudou && x.r.etag)) novasEtags[`${prefixo}br`] = nacional.etag;
     await gravarEtags(novasEtags);
+    const todasCertas = mudaram.every((x) => x.r.mudou && x.r.etag);
+    if (nacional.json.and === "f" && todasCertas && tudoTerminado) await marcarEncerrada(fim);
 
     return Response.json({ eleicao, ufsQueMudaram: mudaram.length, baixados });
   } catch (e) {

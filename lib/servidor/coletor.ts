@@ -6,7 +6,7 @@ import type { Foto } from "../historico";
 import { int, titulo } from "../texto";
 import { apuracaoComecou, candidatosTSE, type ArquivoTSE } from "../tse-formato";
 import { gravar, ler, podeGravar, podeLer } from "./supabase";
-import { gravarEtags, lerEtags } from "./estado";
+import { encerrada, gravarEtags, lerEtags, marcarEncerrada } from "./estado";
 import { publicarHistorico } from "./historico";
 import { buscarJson, buscarSeMudou, freio, listaMunicipios, momentoTSE, turnoNoServidor, type Vez } from "./tse";
 
@@ -64,8 +64,12 @@ export async function baixarFotos(eleicao: string, vez: Vez, nacional?: ArquivoT
 }
 
 export async function coletar({ seco }: { seco: boolean }) {
+  // 2º turno encerrado: não pergunta nem qual é o turno
+  if (!seco && (await encerrada(`fim-${ELEICOES[2].presidente}`))) return { pulou: "apuração encerrada" };
   const turno = await turnoNoServidor();
   const { presidente: eleicao, estadual } = ELEICOES[turno];
+  const fim = `fim-${eleicao}`;
+  if (!seco && (await encerrada(fim))) return { turno, eleicao, pulou: "apuração encerrada" };
   const vez = freio(20);
 
   // o arquivo nacional muda sempre que qualquer seção do país é totalizada: sem mudança, não há o que fazer
@@ -143,6 +147,7 @@ export async function coletar({ seco }: { seco: boolean }) {
   if (gravou) await publicarHistorico(eleicao, { momento, br, ufs });
   // ETag só depois de tudo gravado: se faltou estado ou deu erro, o próximo minuto tenta de novo
   if (!seco && completa) await gravarEtags({ [chaveBr]: nacional.etag });
+  if (!seco && completa && brJ.and === "f") await marcarEncerrada(fim);
 
   return { turno, eleicao, momento, mudou: true, novo, gravado: gravou, faltando, eventos: eventos.length };
 }

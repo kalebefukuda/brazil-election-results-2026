@@ -27,3 +27,10 @@ export async function gravarEtags(etags: Record<string, string | null>) {
     console.error("apuracao_estado (gravação):", e);
   }
 }
+
+// depois que o TSE marca o resultado como final, a coleta daquela eleição não pergunta mais nada a ninguém
+export async function encerrada(chave: string) {
+  return (await lerEtags(chave)).has(chave);
+}
+
+export const marcarEncerrada = (chave: string) => gravarEtags({ [chave]: "final" });

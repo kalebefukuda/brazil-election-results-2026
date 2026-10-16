@@ -83,17 +83,17 @@ Abre em http://localhost:3000. Sem Supabase configurado, o modo local baixa os m
 
 ### Variáveis de ambiente
 
-| Variável                    | Pra quê                                                                                        |
-| --------------------------- | ---------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`  | URL do projeto Supabase                                                                        |
-| `NEXT_PUBLIC_SUPABASE_KEY`  | chave pública (publishable/anon): leitura e contador de online                                 |
-| `SUPABASE_SERVICE_ROLE_KEY` | chave secreta: só o coletor usa, pra gravar                                                    |
-| `CRON_SECRET`               | segredo que o `pg_cron` manda em `Authorization: Bearer` pra chamar o coletor (24+ caracteres) |
-| `COLETA_ATIVA`              | `1` liga a coleta; qualquer outro valor faz as rotas de coleta não fazerem nada                |
+| Variável                    | Pra quê                                                                                                                                   |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`  | URL do projeto Supabase                                                                                                                   |
+| `NEXT_PUBLIC_SUPABASE_KEY`  | chave pública (publishable/anon): leitura e contador de online                                                                            |
+| `SUPABASE_SERVICE_ROLE_KEY` | chave secreta: só o coletor usa, pra gravar                                                                                               |
+| `COLETOR_SEGREDO`           | segredo (24+ caracteres) que o `pg_cron` manda em `Authorization: Bearer` pra chamar o coletor. `CRON_SECRET`, se existir, tem prioridade |
+| `COLETA_ATIVA` (opcional)   | `0` desliga a coleta na hora, sem mexer no agendamento                                                                                    |
 
 ### Supabase
 
-Rode no SQL Editor, em ordem, os arquivos de `supabase/migrations/`. Antes, troque `SITE` e `SEGREDO` pela URL do site e pelo valor de `CRON_SECRET`.
+Rode no SQL Editor, em ordem, os arquivos de `supabase/migrations/`. Antes, troque `SITE` e `SEGREDO` pela URL do site e pelo valor de `COLETOR_SEGREDO`.
 
 O agendamento da `003` só dispara na noite do 2º turno (25/10, das 17h à 0h59). Fora disso a coleta fica parada, e mesmo quando roda ela pergunta ao TSE se o arquivo mudou (ETag) antes de baixar qualquer coisa.
 

@@ -127,7 +127,7 @@ export default function Painel() {
     if (ia < 0 || ib < 0) return hist;
     return historico.fotos.map((f) => {
       const [st, ts, vv] = f.br;
-      const v = (i: number) => (vv ? (f.br[N_CAMPOS + i] / vv) * 100 : 0);
+      const v = (i: number) => (vv ? ((f.br[N_CAMPOS + i] ?? 0) / vv) * 100 : 0);
       return { hora: horaBrasilia(f.momento), pst: ts ? (st / ts) * 100 : 0, a: v(ia), b: v(ib), an: ca.n, bn: cb.n };
     });
   }, [historico, hist, br]);

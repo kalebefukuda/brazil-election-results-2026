@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import Faixa from "@/components/Faixa";
 import Nav from "@/components/Nav";
 import Rodape from "@/components/Rodape";
+import Chat from "@/components/chat/Chat";
 import { AutoProvider } from "@/lib/auto";
 import "./globals.css";
 
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <Rodape />
         </AutoProvider>
+        <Chat />
         <Analytics />
       </body>
     </html>

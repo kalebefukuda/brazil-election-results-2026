@@ -42,6 +42,8 @@ function Painel({ onFechar }: { onFechar: () => void }) {
   const [carregou, setCarregou] = useState(false);
   const [apelido, setApelido] = useState(lerApelido);
   const [rascunhoApelido, setRascunhoApelido] = useState(apelido);
+  // sem apelido, a primeira tentativa de escrever abre a pergunta antes
+  const [pedindoApelido, setPedindoApelido] = useState(false);
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -49,6 +51,7 @@ function Painel({ onFechar }: { onFechar: () => void }) {
   const [escondidas, setEscondidas] = useState<Set<number>>(() => new Set());
   const lista = useRef<HTMLDivElement>(null);
   const campo = useRef<HTMLInputElement>(null);
+  const campoApelido = useRef<HTMLInputElement>(null);
   const noFim = useRef(true);
 
   const recarregar = useCallback(() => {
@@ -77,7 +80,11 @@ function Painel({ onFechar }: { onFechar: () => void }) {
   }, [msgs]);
 
   useEffect(() => {
-    campo.current?.focus();
+    if (pedindoApelido) campoApelido.current?.focus();
+  }, [pedindoApelido]);
+
+  useEffect(() => {
+    if (lerApelido()) campo.current?.focus();
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onFechar();
     document.addEventListener("keydown", esc);
     // no celular o painel cobre a tela: a página atrás não rola
@@ -95,15 +102,23 @@ function Painel({ onFechar }: { onFechar: () => void }) {
     if (a.length < 2 || a.length > 20) return setErro("O apelido precisa ter de 2 a 20 caracteres.");
     setErro("");
     setApelido(a);
+    setPedindoApelido(false);
     try {
       localStorage.setItem("chat-apelido", a);
     } catch {}
     setTimeout(() => campo.current?.focus());
   }
 
+  function pedirApelido() {
+    setRascunhoApelido(apelido);
+    setErro("");
+    setPedindoApelido(true);
+  }
+
   async function mandar(e: React.FormEvent) {
     e.preventDefault();
     const t = texto.trim();
+    if (!apelido) return pedirApelido();
     if (!t || enviando) return;
     setEnviando(true);
     setErro("");
@@ -117,7 +132,11 @@ function Painel({ onFechar }: { onFechar: () => void }) {
       const msg = (err as Error).message;
       setErro(msg);
       // apelido recusado pelo banco: volta pra escolher outro
-      if (msg.startsWith("Escolha outro apelido")) setApelido("");
+      if (msg.startsWith("Escolha outro apelido")) {
+        setApelido("");
+        setPedindoApelido(true);
+        setRascunhoApelido("");
+      }
     } finally {
       setEnviando(false);
       campo.current?.focus();
@@ -185,63 +204,97 @@ function Painel({ onFechar }: { onFechar: () => void }) {
       </div>
 
       <div className="border-t border-line px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
-        {erro && (
+        {erro && !pedindoApelido && (
           <p className="mb-2 text-[12px]" style={{ color: "var(--c13)" }} role="alert">
             {erro}
           </p>
         )}
-        {!apelido ? (
-          <form onSubmit={entrar} className="flex gap-2">
+        <form onSubmit={mandar} className="flex gap-2">
+          <input
+            ref={campo}
+            className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 text-[14px] outline-none focus:border-ink3"
+            placeholder="Escreva uma mensagem"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            onFocus={() => !apelido && pedirApelido()}
+            maxLength={LIMITE_TEXTO}
+            aria-label="Mensagem"
+            autoComplete="off"
+          />
+          <button
+            className="btn grid !min-h-[40px] w-10 place-items-center !p-0"
+            type="submit"
+            disabled={!texto.trim() || enviando}
+            aria-label="Enviar"
+          >
+            <IconeEnviar />
+          </button>
+        </form>
+        <p className="mt-1.5 flex justify-between text-[11px] text-ink3">
+          {apelido ? (
+            <span>
+              como <b className="font-semibold text-ink2">{apelido}</b> ·{" "}
+              <button className="underline-offset-2 hover:text-ink hover:underline" onClick={pedirApelido}>
+                trocar
+              </button>
+            </span>
+          ) : (
+            <span>Você escolhe um apelido antes de enviar.</span>
+          )}
+          <span className="num">
+            {texto.length}/{LIMITE_TEXTO}
+          </span>
+        </p>
+      </div>
+
+      {pedindoApelido && (
+        <div
+          className="absolute inset-0 z-10 grid place-items-center bg-[color-mix(in_srgb,var(--bg)_70%,transparent)] p-4 backdrop-blur-sm sm:rounded-2xl"
+          onClick={(e) => e.target === e.currentTarget && setPedindoApelido(false)}
+        >
+          <form
+            onSubmit={entrar}
+            // Esc fecha só a pergunta, não o chat
+            onKeyDown={(e) => {
+              if (e.key !== "Escape") return;
+              e.stopPropagation();
+              setPedindoApelido(false);
+            }}
+            className="card w-full max-w-[320px] p-5 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="t-apelido"
+          >
+            <h3 id="t-apelido" className="text-[16px] font-semibold tracking-tight">
+              Qual vai ser o seu apelido?
+            </h3>
+            <p className="mt-1 text-[12.5px] text-ink3">É assim que você aparece para todo mundo no chat.</p>
             <input
-              ref={campo}
-              className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 text-[14px] outline-none focus:border-ink3"
-              placeholder="Escolha um apelido"
+              ref={campoApelido}
+              className="mt-4 h-10 w-full rounded-lg border border-line bg-bg px-3 text-[14px] outline-none focus:border-ink3"
+              placeholder="Ex.: Ana do Recife"
               value={rascunhoApelido}
               onChange={(e) => setRascunhoApelido(e.target.value)}
               maxLength={20}
               aria-label="Seu apelido no chat"
               autoComplete="off"
             />
-            <button className="btn !min-h-[40px] font-semibold" type="submit">
-              Entrar
-            </button>
-          </form>
-        ) : (
-          <>
-            <form onSubmit={mandar} className="flex gap-2">
-              <input
-                ref={campo}
-                className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 text-[14px] outline-none focus:border-ink3"
-                placeholder="Escreva uma mensagem"
-                value={texto}
-                onChange={(e) => setTexto(e.target.value)}
-                maxLength={LIMITE_TEXTO}
-                aria-label="Mensagem"
-                autoComplete="off"
-              />
-              <button
-                className="btn grid !min-h-[40px] w-10 place-items-center !p-0"
-                type="submit"
-                disabled={!texto.trim() || enviando}
-                aria-label="Enviar"
-              >
-                <IconeEnviar />
+            {erro && (
+              <p className="mt-2 text-[12px]" style={{ color: "var(--c13)" }} role="alert">
+                {erro}
+              </p>
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" className="btn !min-h-[38px]" onClick={() => setPedindoApelido(false)}>
+                Cancelar
               </button>
-            </form>
-            <p className="mt-1.5 flex justify-between text-[11px] text-ink3">
-              <span>
-                como <b className="font-semibold text-ink2">{apelido}</b> ·{" "}
-                <button className="underline-offset-2 hover:text-ink hover:underline" onClick={() => setApelido("")}>
-                  trocar
-                </button>
-              </span>
-              <span className="num">
-                {texto.length}/{LIMITE_TEXTO}
-              </span>
-            </p>
-          </>
-        )}
-      </div>
+              <button type="submit" className="btn ativo !min-h-[38px] font-semibold">
+                Entrar no chat
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </section>
   );
 }

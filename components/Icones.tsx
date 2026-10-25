@@ -92,3 +92,29 @@ export function IconeTelaCheia({ className = "h-4 w-4" }: P) {
     </svg>
   );
 }
+
+export function IconeMais({ className = "h-4 w-4" }: P) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+export function IconeMenos({ className = "h-4 w-4" }: P) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+export function IconeRestaurar({ className = "h-4 w-4" }: P) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v5h5" />
+    </svg>
+  );
+}

@@ -63,9 +63,9 @@ export default function Nav() {
     statusCurto = auto.rodando ? `${Math.max(auto.falta, 0)}s` : "pausado";
   }
 
-  const botaoTema = (
+  const botaoTema = (classe: string) => (
     <button
-      className="btn !min-h-[34px] !px-2.5"
+      className={`btn !min-h-[34px] !px-2.5 ${classe}`}
       onClick={trocarTema}
       aria-label="Trocar tema claro/escuro"
       title="Tema"
@@ -80,12 +80,15 @@ export default function Nav() {
         className={`mx-auto flex ${larguraPagina(path)} flex-col px-4 sm:px-6 lg:h-[56px] lg:flex-row lg:items-center lg:gap-4`}
       >
         <div className="flex h-[48px] items-center gap-1 lg:h-auto">
-          <nav className="flex min-w-0 gap-1 overflow-x-auto" aria-label="Seções">
+          <nav
+            className="flex min-w-0 flex-1 gap-0.5 overflow-x-auto [scrollbar-width:none] sm:gap-1"
+            aria-label="Seções"
+          >
             {links.map((l) => (
               <Link
                 key={l.href}
                 href={`${l.href}${sufixo}`}
-                className={`whitespace-nowrap rounded-lg px-2 py-2 text-[12.5px] font-medium transition-colors sm:px-3 sm:text-[13px] ${
+                className={`whitespace-nowrap rounded-lg px-1.5 py-2 text-[12px] font-medium transition-colors sm:px-3 sm:text-[13px] ${
                   l.ativo ? "bg-card text-ink" : "text-ink2 hover:text-ink"
                 }`}
                 aria-current={l.ativo ? "page" : undefined}
@@ -94,12 +97,15 @@ export default function Nav() {
               </Link>
             ))}
           </nav>
+          {/* no celular o tema sobe pra linha das seções: a de baixo fica só com a eleição */}
+          {botaoTema("flex-none !px-2 lg:hidden")}
         </div>
 
-        {/* no celular os controles quebram linha em vez de sair da tela */}
-        <div className="flex flex-wrap items-center gap-1.5 pb-2.5 lg:ml-auto lg:flex-nowrap lg:pb-0">
+        <div
+          className={`flex-wrap items-center gap-1 pb-2.5 sm:gap-1.5 lg:ml-auto lg:flex lg:flex-nowrap lg:pb-0 ${estatica ? "hidden" : "flex"}`}
+        >
           {estatica ? (
-            botaoTema
+            botaoTema("hidden lg:inline-block")
           ) : (
             <>
               <Escolha
@@ -123,7 +129,7 @@ export default function Nav() {
                     return (
                       <button
                         key={t}
-                        className={`whitespace-nowrap rounded-full px-3 text-[12px] font-medium transition-colors ${
+                        className={`whitespace-nowrap rounded-full px-2.5 text-[12px] font-medium sm:px-3 transition-colors ${
                           turno.turno === t ? "bg-ink text-bg" : "text-ink2 hover:text-ink"
                         } disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink2`}
                         aria-pressed={turno.turno === t}
@@ -147,7 +153,7 @@ export default function Nav() {
               )}
               {online !== null && (
                 <span
-                  className="num inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full border border-line px-3 text-[12px] text-ink2"
+                  className="num inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full border border-line px-2.5 text-[12px] text-ink2 sm:px-3"
                   title="Pessoas com o site aberto agora"
                 >
                   <IconePessoas className="h-3.5 w-3.5" />
@@ -156,7 +162,7 @@ export default function Nav() {
                 </span>
               )}
               <span
-                className="num inline-flex h-[34px] items-center gap-2 whitespace-nowrap rounded-full border border-line px-3 text-[12px] text-ink2 sm:min-w-[128px]"
+                className="num inline-flex h-[34px] items-center gap-2 whitespace-nowrap rounded-full border border-line px-2.5 text-[12px] text-ink2 sm:px-3 sm:min-w-[128px]"
                 aria-live="polite"
                 title={auto.ultima ? `Última atualização às ${auto.ultima}` : undefined}
               >
@@ -167,8 +173,12 @@ export default function Nav() {
                 <span className="sm:hidden">{statusCurto}</span>
                 <span className="hidden sm:inline">{status}</span>
               </span>
-              {/* sem "ao vivo": intervalo e pausa somem mas guardam o lugar, pra nada pular */}
-              <div className={`flex items-center gap-1.5 ${semAoVivo ? "invisible" : ""}`} aria-hidden={semAoVivo}>
+              {/* sem "ao vivo": intervalo e pausa somem mas guardam o lugar, pra nada pular;
+                  no celular não aparecem (a atualização já é automática) e não empurram nada pra outra linha */}
+              <div
+                className={`hidden items-center gap-1.5 sm:flex ${semAoVivo ? "invisible" : ""}`}
+                aria-hidden={semAoVivo}
+              >
                 <Escolha
                   rotulo="Intervalo de atualização"
                   valor={String(auto.intervalo)}
@@ -192,7 +202,7 @@ export default function Nav() {
                   {auto.rodando ? <IconePausa /> : <IconePlay />}
                 </button>
               </div>
-              {botaoTema}
+              {botaoTema("hidden lg:inline-block")}
             </>
           )}
         </div>
